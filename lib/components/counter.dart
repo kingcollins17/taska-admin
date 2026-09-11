@@ -1,8 +1,6 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 
-import 'embedded_counter.dart';
-
 class Counter extends StatefulComponent {
   const Counter({super.key});
 
@@ -21,22 +19,16 @@ class CounterState extends State<Counter> {
           onClick: () {
             setState(() => count--);
           },
-          [.text('-')],
+          [Component.text('-')],
         ),
-        span([.text('$count')]),
+        span([Component.text('$count')]),
         button(
           onClick: () {
             setState(() => count++);
           },
-          [.text('+')],
+          [Component.text('+')],
         ),
       ]),
-      EmbeddedCounter(
-        count: count,
-        onChange: (value) {
-          setState(() => count = value);
-        },
-      ),
     ]);
   }
 }
