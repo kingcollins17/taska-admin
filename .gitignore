@@ -2,7 +2,8 @@
 **/doc/api/
 .dart_tool/
 .packages
-
+node_modules
+.vscode
 # Conventional directory for build output.
 /build/
 

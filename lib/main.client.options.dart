@@ -6,6 +6,9 @@
 
 import 'package:jaspr/client.dart';
 
+import 'package:taska_admin/pages/login.dart' deferred as _login;
+import 'package:taska_admin/app.dart' deferred as _app;
+
 /// Default [ClientOptions] for use with your Jaspr project.
 ///
 /// Use this to initialize Jaspr **before** calling [runApp].
@@ -22,4 +25,12 @@ import 'package:jaspr/client.dart';
 ///   runApp(...);
 /// }
 /// ```
-ClientOptions get defaultClientOptions => ClientOptions();
+ClientOptions get defaultClientOptions => ClientOptions(
+  clients: {
+    'app': ClientLoader((p) => _app.App(), loader: _app.loadLibrary),
+    'login': ClientLoader(
+      (p) => _login.LoginPage(),
+      loader: _login.loadLibrary,
+    ),
+  },
+);

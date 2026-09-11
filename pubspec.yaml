@@ -1,19 +1,20 @@
 name: taska_admin
-description: A new Jaspr project
+description: Taska Admin WebApp
 version: 0.0.1
 
 environment:
   sdk: ^3.8.0
 
 dependencies:
-  jaspr: ^0.23.4
+  jaspr: ^0.22.3
+  jaspr_riverpod: ^0.4.4
   jaspr_router: ^0.8.0
 
 dev_dependencies:
   build_runner: ^2.4.0
-  build_web_compilers: ^4.4.6
+  build_web_compilers: ^4.8.0
   lints: ^5.0.0
-  jaspr_builder: ^0.23.4
+  jaspr_builder: ^0.22.3
 
 jaspr:
   mode: client
