@@ -10,15 +10,15 @@ class Sidebar extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    return aside(classes: 'w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/80 h-screen sticky top-0 p-4 md:p-5 flex flex-col justify-between shrink-0 overflow-hidden select-none transition-colors', [
+    return aside(classes: 'w-64 bg-white dark:bg-[#131916] border-r border-slate-200/80 dark:border-[#1F2D27] h-screen sticky top-0 p-4 md:p-5 flex flex-col justify-between shrink-0 overflow-hidden select-none transition-colors', [
       div(classes: 'flex flex-col flex-1 overflow-hidden', [
         // Logo Section
         div(classes: 'flex items-center space-x-3 mb-5 px-2 shrink-0', [
-          div(classes: 'w-8 h-8 md:w-9 md:h-9 bg-[#0E4B88] rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-950/20', [
+          div(classes: 'w-8 h-8 md:w-9 md:h-9 bg-[#00A870] rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-500/20', [
             const AppIcon(AppIcons.logo),
           ]),
           span(classes: 'text-lg md:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight', [
-            Component.text('ProSale'),
+            Component.text('Taska'),
           ]),
         ]),
 
@@ -53,9 +53,9 @@ class Sidebar extends StatelessComponent {
       ]),
 
       // Bottom Upgrade Card
-      div(classes: 'bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-800/60 dark:via-slate-800/40 dark:to-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl p-3.5 shadow-sm shrink-0 mt-auto', [
+      div(classes: 'bg-gradient-to-br from-emerald-50/50 via-slate-50 to-emerald-50/30 dark:from-[#18201D] dark:via-[#131916] dark:to-[#0F261F] border border-slate-200/70 dark:border-[#1F2D27] rounded-2xl p-3.5 shadow-sm shrink-0 mt-auto', [
         div(classes: 'flex items-center space-x-2 mb-1.5', [
-          div(classes: 'w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0', [
+          div(classes: 'w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-[#00A870] dark:text-[#00F5A0] shrink-0', [
             const AppIcon(AppIcons.lightbulb),
           ]),
           span(classes: 'text-xs font-bold text-slate-900 dark:text-white', [
@@ -63,10 +63,10 @@ class Sidebar extends StatelessComponent {
           ]),
         ]),
         p(classes: 'text-[10.5px] text-slate-500 dark:text-slate-400 leading-snug mb-2.5', [
-          Component.text('Unlock Your Full Sales Potential with Our Premium Account Upgrade 🚀'),
+          Component.text('Unlock Your Full Service Potential with Taska Premium 🚀'),
         ]),
         button(
-          classes: 'w-full bg-[#0E4B88] hover:bg-[#093460] active:scale-[0.98] text-white text-xs font-semibold py-2 px-3 rounded-xl transition-all shadow-md shadow-blue-900/10 cursor-pointer text-center block',
+          classes: 'w-full bg-[#00A870] hover:bg-[#008F5F] active:scale-[0.98] text-white text-xs font-semibold py-2 px-3 rounded-xl transition-all shadow-md shadow-emerald-900/15 cursor-pointer text-center block',
           [Component.text('Upgrade now')],
         ),
       ]),
@@ -77,7 +77,7 @@ class Sidebar extends StatelessComponent {
     if (isActive) {
       return a(
         href: path,
-        classes: 'bg-[#0E4B88] text-white font-medium rounded-xl px-3 py-2 flex items-center space-x-3 shadow-md shadow-blue-900/15 transition-all text-xs md:text-sm',
+        classes: 'bg-[#00A870] text-white font-medium rounded-xl px-3 py-2 flex items-center space-x-3 shadow-md shadow-emerald-600/20 transition-all text-xs md:text-sm',
         [
           AppIcon(icon),
           span(classes: 'font-medium', [Component.text(label)]),
@@ -86,7 +86,7 @@ class Sidebar extends StatelessComponent {
     }
     return a(
       href: path,
-      classes: 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl px-3 py-2 flex items-center space-x-3 transition-colors text-xs md:text-sm',
+      classes: 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-[#18201D] rounded-xl px-3 py-2 flex items-center space-x-3 transition-colors text-xs md:text-sm',
       [
         AppIcon(icon),
         span(classes: 'font-medium', [Component.text(label)]),

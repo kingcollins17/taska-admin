@@ -195,7 +195,7 @@ Styles({ // or .styles({
 ```
 
 - **Rule 1:** You MUST define all properties in the order they are defined in the `Styles` class.
-- **Rule 2:** You MUST use dot-shorthands for all style properties and values where applicable (e.g., `padding: .all(10.px)` instead of `padding: Padding.all(Unit.pixels(10))`, or `justifyContent: .center` instead of `justifyContent: JustifyContent.center`).
+- **Rule 2:** You MUST NOT use dot-shorthand notation (e.g. `.px`, `.percent`, `.flex`, `.zero`). You MUST use explicit types, constructors, and enums (e.g., `Padding.all(Unit.pixels(10))`, `Unit.percent(100)`, `Unit.vh(100)`, `Display.flex`, `FlexDirection.column`, `JustifyContent.center`, `JustifyContent.spaceBetween`, `AlignItems.center`, `Position.relative`, `Position.absolute`, `Overflow.hidden`, `Margin.zero`, `Color.hex('...')`).
 - **Rule 3:** You MUST use `raw` for any properties that are not supported by the `Styles` class.
 
 **IMPORTANT:** Before writing styles in one of the below areas, you **MUST** read the respective reference file provided alongside this skill:

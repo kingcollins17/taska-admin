@@ -7,6 +7,9 @@
     "lib": "lib"
   },
   "scripts": {
+    "build:css": "npx @tailwindcss/cli -i web/styles.tw.css -o web/styles.css",
+    "watch:css": "npx @tailwindcss/cli -i web/styles.tw.css -o web/styles.css --watch",
+    "build:css:min": "npx @tailwindcss/cli -i web/styles.tw.css -o web/styles.css --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

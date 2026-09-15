@@ -10,7 +10,7 @@ class LeadsIndustryCard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     return div(
-      classes: 'bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between transition-colors',
+      classes: 'bg-white dark:bg-[#131916] rounded-2xl p-5 border border-slate-200/80 dark:border-[#1F2D27] shadow-sm flex flex-col justify-between transition-colors',
       [
         // Header
         div(classes: 'flex items-center justify-between mb-2', [
@@ -23,19 +23,19 @@ class LeadsIndustryCard extends StatelessComponent {
         // Main Stat Row
         div(classes: 'flex items-center justify-between mb-4', [
           span(classes: 'text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight', [Component.text('39.3%')]),
-          div(classes: 'flex items-center space-x-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full border border-blue-100 dark:border-blue-800/60', [
+          div(classes: 'flex items-center space-x-1 text-xs font-bold text-[#00A870] dark:text-[#00F5A0] bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800/60', [
             const AppIcon(AppIcons.externalLink),
             span([Component.text('+12.9%')]),
           ]),
         ]),
 
         // List Breakdown
-        div(classes: 'space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800', [
+        div(classes: 'space-y-3 pt-2 border-t border-slate-100 dark:border-[#1F2D27]', [
           _buildIndustryItem(
             name: 'Software Management',
             sessions: '34 Sessions',
             percentage: '13.08%',
-            progressColor: 'bg-blue-500',
+            progressColor: 'bg-[#00A870]',
           ),
           _buildIndustryItem(
             name: 'Real Estate',

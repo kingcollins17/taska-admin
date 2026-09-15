@@ -10,26 +10,26 @@ class TopProductsTable extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     return div(
-      classes: 'bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between transition-colors',
+      classes: 'bg-white dark:bg-[#131916] rounded-2xl p-6 border border-slate-200/80 dark:border-[#1F2D27] shadow-sm overflow-hidden flex flex-col justify-between transition-colors',
       [
         // Table Card Header
         div(classes: 'flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6', [
           div(classes: 'flex items-center space-x-3', [
             h3(classes: 'text-base font-bold text-slate-900 dark:text-white', [Component.text('Top Selling Product')]),
-            span(classes: 'text-xs font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-2.5 py-1 rounded-full border border-teal-100 dark:border-teal-800/60', [
+            span(classes: 'text-xs font-bold text-[#00A870] dark:text-[#00F5A0] bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/60', [
               Component.text('15 Product'),
             ]),
           ]),
 
           div(classes: 'flex items-center space-x-3', [
             // Filters Button
-            button(classes: 'bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm flex items-center space-x-1.5 cursor-pointer', [
+            button(classes: 'bg-white dark:bg-[#18201D] border border-slate-200/90 dark:border-[#1F2D27] text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-[#1F2D27] transition-colors shadow-sm flex items-center space-x-1.5 cursor-pointer', [
               const AppIcon(AppIcons.filter),
               span([Component.text('Filters')]),
             ]),
 
             // See More Primary Button
-            button(classes: 'bg-[#0E4B88] hover:bg-[#093460] text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-all shadow-md shadow-blue-900/10 cursor-pointer', [
+            button(classes: 'bg-[#00A870] hover:bg-[#008F5F] text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-all shadow-md shadow-emerald-900/10 cursor-pointer', [
               Component.text('See More'),
             ]),
           ]),
@@ -39,7 +39,7 @@ class TopProductsTable extends StatelessComponent {
         div(classes: 'overflow-x-auto', [
           table(classes: 'w-full text-left border-collapse', [
             // Table Header
-            thead(classes: 'border-b border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider', [
+            thead(classes: 'border-b border-slate-100 dark:border-[#1F2D27] text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider', [
               tr([
                 th(classes: 'pb-3 font-semibold', [
                   div(classes: 'flex items-center space-x-1', [

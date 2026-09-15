@@ -190,7 +190,7 @@ class _UsersPageState extends State<UsersPage> {
       ]),
 
       // Main User List Card Table
-      div(classes: 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5', [
+      div(classes: 'bg-white dark:bg-[#131916] border border-slate-200/80 dark:border-[#1F2D27] rounded-2xl p-5 sm:p-6 shadow-sm space-y-5', [
         // Toolbar: Title + Search + Filter + Add User Button
         div(classes: 'flex flex-col md:flex-row md:items-center justify-between gap-4', [
           h3(classes: 'text-base font-bold text-slate-900 dark:text-white tracking-tight', [
@@ -206,7 +206,7 @@ class _UsersPageState extends State<UsersPage> {
               input(
                 type: InputType.text,
                 value: searchQuery,
-                classes: 'w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-xl pl-9 pr-4 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all',
+                classes: 'w-full bg-slate-50 dark:bg-[#18201D] border border-slate-200/80 dark:border-[#1F2D27] rounded-xl pl-9 pr-4 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#00A870]/20 focus:border-[#00A870] transition-all',
                 attributes: {'placeholder': 'Search Tasks...'},
                 onInput: (value) {
                   setState(() {
@@ -223,17 +223,17 @@ class _UsersPageState extends State<UsersPage> {
                   isFilterOpen = !isFilterOpen;
                 });
               },
-              classes: 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer border border-slate-200/70 dark:border-slate-700',
+              classes: 'bg-slate-50 dark:bg-[#18201D] hover:bg-slate-100 dark:hover:bg-[#1F2D27] text-slate-700 dark:text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer border border-slate-200/70 dark:border-[#1F2D27]',
               [
                 const AppIcon(AppIcons.filter),
                 span([Component.text('Filter')]),
               ],
             ),
 
-            // + Add Task Primary Blue Button
+            // + Add Task Primary Button
             button(
               onClick: () {},
-              classes: 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer',
+              classes: 'bg-[#00A870] hover:bg-[#008F5F] active:scale-[0.98] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer',
               [
                 span(classes: 'text-sm font-bold leading-none', [Component.text('+')]),
                 span([Component.text('Add Task')]),
@@ -273,7 +273,7 @@ class _UsersPageState extends State<UsersPage> {
     required String iconColor,
     required String svgPath,
   }) {
-    return div(classes: 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-start justify-between relative overflow-hidden', [
+    return div(classes: 'bg-white dark:bg-[#131916] border border-slate-200/80 dark:border-[#1F2D27] rounded-2xl p-5 shadow-sm flex items-start justify-between relative overflow-hidden', [
       div(classes: 'space-y-2', [
         span(classes: 'text-xs font-medium text-slate-500 dark:text-slate-400', [
           Component.text(title),
@@ -300,8 +300,8 @@ class _UsersPageState extends State<UsersPage> {
   Component _buildStatusChip(String statusLabel) {
     final isSelected = selectedStatus == statusLabel;
     final classes = isSelected
-        ? 'bg-blue-600 text-white shadow-sm'
-        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700';
+        ? 'bg-[#00A870] text-white shadow-sm'
+        : 'bg-white dark:bg-[#18201D] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1F2D27] border border-slate-200/80 dark:border-[#1F2D27]';
 
     return button(
       onClick: () {
@@ -393,10 +393,10 @@ class _UsersPageState extends State<UsersPage> {
                 Component.text(user.joinedDate),
               ]),
 
-              // Actions Button Column (Blue Action Button)
+              // Actions Button Column (Green Action Button)
               td(classes: 'p-3.5 pr-4 text-center', [
                 button(
-                  classes: 'bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-sm shadow-blue-600/15 cursor-pointer',
+                  classes: 'bg-[#00A870] hover:bg-[#008F5F] active:scale-95 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all shadow-sm shadow-emerald-600/15 cursor-pointer',
                   [Component.text('Edit Task')],
                 ),
               ]),
@@ -413,7 +413,7 @@ class _UsersPageState extends State<UsersPage> {
     if (status == 'Pending') {
       badgeClasses += ' bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50';
     } else if (status == 'Active') {
-      badgeClasses += ' bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50';
+      badgeClasses += ' bg-emerald-50 text-[#00A870] dark:bg-emerald-950/60 dark:text-[#00F5A0] border border-emerald-200/50 dark:border-emerald-800/50';
     } else if (status == 'Verified') {
       badgeClasses += ' bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50';
     } else {
@@ -441,11 +441,11 @@ class _UsersPageState extends State<UsersPage> {
               });
             }
           },
-          classes: 'px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-600 dark:text-slate-300 text-xs',
+          classes: 'px-2.5 py-1 rounded-lg border border-slate-200 dark:border-[#1F2D27] hover:bg-slate-100 dark:hover:bg-[#18201D] transition-colors cursor-pointer text-slate-600 dark:text-slate-300 text-xs',
           [Component.text('Previous')],
         ),
         button(
-          classes: 'w-7 h-7 rounded-lg flex items-center justify-center bg-blue-600 text-white font-bold shadow-sm text-xs',
+          classes: 'w-7 h-7 rounded-lg flex items-center justify-center bg-[#00A870] text-white font-bold shadow-sm text-xs',
           [Component.text('1')],
         ),
         button(

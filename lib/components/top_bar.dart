@@ -1,9 +1,10 @@
 import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
+import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
 import '../core/designs/app_icons.dart';
 import '../core/designs/components/app_icon.dart';
-import '../core/providers/theme_scope.dart';
+import '../core/providers/ui_state_provider.dart';
 
 class TopBar extends StatelessComponent {
   final String title;
@@ -11,8 +12,8 @@ class TopBar extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    final themeScope = ThemeScope.of(context);
-    final isDarkMode = themeScope?.isDarkMode ?? false;
+    final uiState = context.watch(uiStateProvider);
+    final isDarkMode = uiState.isDarkMode;
 
     return header(classes: 'w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mb-7', [
       // Left: Page Title
@@ -29,7 +30,7 @@ class TopBar extends StatelessComponent {
           ]),
           input(
             type: InputType.text,
-            classes: 'w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-full pl-10 pr-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all',
+            classes: 'w-full bg-white dark:bg-[#131916] border border-slate-200/80 dark:border-[#1F2D27] rounded-full pl-10 pr-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00A870]/20 focus:border-[#00A870] transition-all',
             attributes: {'placeholder': 'Search....'},
           ),
         ]),
@@ -37,9 +38,9 @@ class TopBar extends StatelessComponent {
         // Light/Dark Theme Toggle Button
         button(
           onClick: () {
-            themeScope?.toggleTheme();
+            context.toggleTheme();
           },
-          classes: 'w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm cursor-pointer active:scale-95',
+          classes: 'w-9 h-9 rounded-full bg-white dark:bg-[#131916] border border-slate-200/80 dark:border-[#1F2D27] flex items-center justify-center text-slate-600 dark:text-[#00F5A0] hover:bg-slate-50 dark:hover:bg-[#18201D] transition-all shadow-sm cursor-pointer active:scale-95',
           attributes: {'title': isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'},
           [
             AppIcon(isDarkMode ? AppIcons.sun : AppIcons.moon),
@@ -48,7 +49,7 @@ class TopBar extends StatelessComponent {
 
         // Calendar Icon Button
         button(
-          classes: 'w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm cursor-pointer',
+          classes: 'w-9 h-9 rounded-full bg-white dark:bg-[#131916] border border-slate-200/80 dark:border-[#1F2D27] flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#18201D] transition-colors shadow-sm cursor-pointer',
           [
             const AppIcon(AppIcons.calendar),
           ],
@@ -56,10 +57,10 @@ class TopBar extends StatelessComponent {
 
         // Notification Bell Icon Button with Red Badge
         button(
-          classes: 'w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm relative cursor-pointer',
+          classes: 'w-9 h-9 rounded-full bg-white dark:bg-[#131916] border border-slate-200/80 dark:border-[#1F2D27] flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#18201D] transition-colors shadow-sm relative cursor-pointer',
           [
             const AppIcon(AppIcons.bell),
-            span(classes: 'absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900', [
+            span(classes: 'absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#00A870] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-[#0B0F0E]', [
               Component.text('1'),
             ]),
           ],

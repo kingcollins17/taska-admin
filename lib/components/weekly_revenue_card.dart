@@ -10,7 +10,7 @@ class WeeklyRevenueCard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     return div(
-      classes: 'bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between transition-colors',
+      classes: 'bg-white dark:bg-[#131916] rounded-2xl p-5 border border-slate-200/80 dark:border-[#1F2D27] shadow-sm flex flex-col justify-between transition-colors',
       [
         // Header
         div(classes: 'flex items-center justify-between mb-4', [
@@ -32,7 +32,7 @@ class WeeklyRevenueCard extends StatelessComponent {
           ]),
 
           // Floating Tooltip above Wednesday
-          div(classes: 'absolute left-[45%] top-2 -translate-x-1/2 bg-white dark:bg-slate-800 rounded-lg px-2.5 py-1 border border-slate-200 dark:border-slate-700 shadow-md text-xs font-extrabold text-slate-900 dark:text-white z-10 animate-pulse', [
+          div(classes: 'absolute left-[45%] top-2 -translate-x-1/2 bg-white dark:bg-[#18201D] rounded-lg px-2.5 py-1 border border-slate-200 dark:border-[#1F2D27] shadow-md text-xs font-extrabold text-slate-900 dark:text-[#00F5A0] z-10 animate-pulse', [
             Component.text('\$20,989'),
           ]),
 
@@ -47,7 +47,7 @@ class WeeklyRevenueCard extends StatelessComponent {
         ]),
 
         // X-Axis Day Labels
-        div(classes: 'flex items-center justify-around text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800 pl-7', [
+        div(classes: 'flex items-center justify-around text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-[#1F2D27] pl-7', [
           span([Component.text('Mon')]),
           span([Component.text('Tue')]),
           span(classes: 'font-bold text-slate-700 dark:text-slate-200', [Component.text('Wed')]),
@@ -60,8 +60,8 @@ class WeeklyRevenueCard extends StatelessComponent {
 
   Component _buildBar(String day, String heightClass, {required bool isHighlighted}) {
     if (isHighlighted) {
-      return div(classes: 'w-7 $heightClass bg-gradient-to-t from-lime-400 to-emerald-400 rounded-xl shadow-md shadow-lime-500/20 hover:scale-105 transition-transform', []);
+      return div(classes: 'w-7 $heightClass bg-gradient-to-t from-[#00A870] to-[#00F5A0] rounded-xl shadow-md shadow-emerald-500/20 hover:scale-105 transition-transform', []);
     }
-    return div(classes: 'w-7 $heightClass bg-slate-100/90 dark:bg-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors', []);
+    return div(classes: 'w-7 $heightClass bg-slate-100/90 dark:bg-[#18201D] rounded-xl hover:bg-slate-200 dark:hover:bg-[#1F2D27] transition-colors', []);
   }
 }

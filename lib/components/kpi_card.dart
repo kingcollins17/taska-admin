@@ -23,7 +23,7 @@ class KpiCard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     return div(
-      classes: 'bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between',
+      classes: 'bg-white dark:bg-[#131916] rounded-2xl p-4 border border-slate-200/80 dark:border-[#1F2D27] shadow-sm hover:shadow-md transition-all flex flex-col justify-between',
       [
         // Header Row: Category label with icon + right chevron
         div(classes: 'flex items-center justify-between mb-3', [
