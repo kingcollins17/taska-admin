@@ -19,61 +19,67 @@ class App extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     final uiState = context.watch(uiStateProvider);
+    final colorScheme = uiState.colorScheme;
     final isDarkMode = uiState.isDarkMode;
 
     var appClasses =
-        'relative w-full min-h-screen bg-[#F3F6F4] dark:bg-[#0B0F0E] text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-[#00A870] selection:text-white transition-colors duration-200';
+        'relative w-full min-h-screen font-sans antialiased selection:bg-[#00A870] selection:text-white transition-colors duration-200';
     if (isDarkMode) {
       appClasses += ' dark';
     }
 
-    return div(classes: appClasses, [
-      Router(
-        redirect: (context, state) {
-          final token = localStorage.getItem('accessToken');
-          final isAuthenticated = token != null && token.isNotEmpty;
-          final isLoggingIn = state.location == '/login';
+    return div(
+      classes: appClasses,
+      styles: Styles(backgroundColor: Color(colorScheme.background)),
+      [
+        Router(
+          redirect: (context, state) {
+            final token = localStorage.getItem('accessToken');
+            final isAuthenticated = token != null && token.isNotEmpty;
+            final isLoggingIn = state.location == '/login';
 
-          if (!isAuthenticated && !isLoggingIn) {
-            return '/login';
-          }
-          if (isAuthenticated && isLoggingIn) {
-            return '/';
-          }
-          return null;
-        },
-        routes: [
-          Route(
-            path: '/login',
-            title: 'Taska Admin - Authentication',
-            builder: (context, state) => const LoginPage(),
-          ),
-          ShellRoute(
-            builder: (context, state, child) {
-              var activePath = state.location;
-              var title = 'Sales Overview';
-              if (activePath == '/about') {
-                title = 'About Taska';
-              } else if (activePath == '/users' || activePath == '/customers') {
-                title = 'User Management';
-              }
+            if (!isAuthenticated && !isLoggingIn) {
+              return '/login';
+            }
+            if (isAuthenticated && isLoggingIn) {
+              return '/';
+            }
+            return null;
+          },
+          routes: [
+            Route(
+              path: '/login',
+              title: 'Taska Admin - Authentication',
+              builder: (context, state) => const LoginPage(),
+            ),
+            ShellRoute(
+              builder: (context, state, child) {
+                var activePath = state.location;
+                var title = 'Overview';
+                if (activePath == '/about') {
+                  title = 'About Taska';
+                } else if (activePath == '/users' || activePath == '/customers') {
+                  title = 'User Management';
+                }
 
-              return div(
-                classes:
-                    'w-full min-h-screen flex flex-col md:flex-row bg-[#F3F6F4] dark:bg-[#0B0F0E] transition-colors duration-200',
-                [
-                  Sidebar(activePath: activePath),
-                  section(
-                    classes:
-                        'flex-1 bg-[#F3F6F4] dark:bg-[#0B0F0E] p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden transition-colors duration-200',
-                    [
-                      TopBar(title: title),
-                      child,
-                    ],
-                  ),
-                ],
-              );
-            },
+                return div(
+                  classes:
+                      'w-full min-h-screen flex flex-col md:flex-row transition-colors duration-200',
+                  styles: Styles(backgroundColor: Color(colorScheme.background)),
+                  [
+                    Sidebar(activePath: activePath),
+                    section(
+                      classes:
+                          'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden transition-colors duration-200',
+                      styles: Styles(backgroundColor: Color(colorScheme.background)),
+                      [
+                        TopBar(title: title),
+                        child,
+                      ],
+                    ),
+                  ],
+                );
+              },
             routes: [
               Route(
                 path: '/',

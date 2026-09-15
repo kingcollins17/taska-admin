@@ -99,6 +99,49 @@ List<StyleRule> get globalStyles => [
 
 - **Rule:** If you are using raw `.css` files (or other css frameworks like sass/scss, tailwind, etc.), you MUST include them using a `<link rel="stylesheet">` element inside the `Document(head: [...])` component (for server/static mode) or in `web/index.html` (for client mode).
 
+### 5. Combining Tailwind CSS with Custom/Dynamic Styling
+
+When building Jaspr applications with Tailwind CSS and dynamic Dart theme models:
+
+- **Rule 1: Use Tailwind CSS for Layout & Structure (Literal Strings ONLY)**
+  Use Tailwind CSS utility classes in `classes: '...'` for layout, grid, flexbox, dimensions, spacing, hover effects, and transitions.
+  > **CRITICAL:** Every string passed to `classes:` MUST be a 100% literal string (e.g. `'flex w-full p-4 text-sm'`). NEVER use string interpolation (e.g. `${...}`) or Dart variables/enums inside Tailwind class strings. Tailwind CLI scans source code for literal strings at build time and cannot resolve runtime Dart code.
+
+- **Rule 2: Use Jaspr Inline `Styles(...)` for Dynamic Colors**
+  For colors driven by dynamic Dart state (such as `colorScheme.surface`, `colorScheme.textPrimary`, `colorScheme.primary`, `colorScheme.border`), pass a Jaspr `Styles` instance to the `styles:` parameter instead of writing dynamic Tailwind bracket strings like `bg-[${colorScheme.surface}]`.
+
+```dart
+// Example: Combining Tailwind layout with dynamic Jaspr inline colors
+@client
+class HeaderComponent extends StatelessComponent {
+  const HeaderComponent({super.key});
+
+  @override
+  Component build(BuildContext context) {
+    final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
+
+    return div(
+      // Static Tailwind classes for layout, positioning & spacing
+      classes: 'flex w-full items-center justify-between p-6 rounded-2xl shadow-sm',
+      // Dynamic inline styles for colors driven by theme state
+      styles: Styles(
+        backgroundColor: Color(colorScheme.surface),
+        raw: {
+          'border-color': colorScheme.border,
+        },
+      ),
+      [
+        h1(
+          classes: 'text-2xl font-extrabold tracking-tight',
+          styles: Styles(color: Color(colorScheme.textHeading)),
+          [Component.text('Dashboard')],
+        ),
+      ],
+    );
+  }
+}
+```
+
 ---
 
 ## Jaspr Styles Properties

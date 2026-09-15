@@ -3,6 +3,7 @@ import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 import 'package:universal_web/web.dart' as web;
 
 import '../designs/colors.dart';
+import '../services/local_storage.dart';
 
 enum ThemeMode {
   system,
@@ -40,7 +41,7 @@ class UIState {
   final FlushbarConfig? flushbar;
 
   const UIState({
-    this.themeMode = ThemeMode.system,
+    this.themeMode = ThemeMode.light,
     this.sidePanel,
     this.isSidePanelOpen = false,
     this.flushbar,
@@ -57,7 +58,7 @@ class UIState {
   }
 
   ColorScheme get colorScheme =>
-      isDarkMode ? const ColorScheme.dark() : const ColorScheme.light();
+      isDarkMode ?  ColorScheme.darkScheme:  ColorScheme.lightScheme;
 
   UIState copyWith({
     ThemeMode? themeMode,
@@ -74,20 +75,39 @@ class UIState {
       flushbar: clearFlushbar ? null : (flushbar ?? this.flushbar),
     );
   }
+
+  @override
+  toString() => {'themeMode': themeMode.toString(), 'isSidePanelOpen': isSidePanelOpen}.toString();
 }
 
 final uiStateProvider = NotifierProvider<UIStateNotifier, UIState>(UIStateNotifier.new);
 
 class UIStateNotifier extends Notifier<UIState> {
+  static const _themeStorageKey = 'taska_is_dark';
+
   @override
-  UIState build() => const UIState();
+  UIState build() {
+    final savedIsDarkStr = localStorage.getItem(_themeStorageKey);
+    ThemeMode initialMode = ThemeMode.light;
+
+    if (savedIsDarkStr != null) {
+      final isDark = savedIsDarkStr.toLowerCase() == 'true' || savedIsDarkStr.toLowerCase() == 'dark';
+      initialMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    }
+
+    return UIState(themeMode: initialMode);
+  }
 
   void setThemeMode(ThemeMode mode) {
+    final isDark = mode == ThemeMode.dark;
+    localStorage.setItem(_themeStorageKey, isDark.toString());
     state = state.copyWith(themeMode: mode);
   }
 
   void toggleTheme() {
     final newMode = state.isDarkMode ? ThemeMode.light : ThemeMode.dark;
+    final isDark = newMode == ThemeMode.dark;
+    localStorage.setItem(_themeStorageKey, isDark.toString());
     state = state.copyWith(themeMode: newMode);
   }
 

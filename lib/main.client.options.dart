@@ -6,6 +6,7 @@
 
 import 'package:jaspr/client.dart';
 
+import 'package:taska_admin/pages/home.dart' deferred as _home;
 import 'package:taska_admin/pages/login.dart' deferred as _login;
 import 'package:taska_admin/app.dart' deferred as _app;
 
@@ -28,6 +29,7 @@ import 'package:taska_admin/app.dart' deferred as _app;
 ClientOptions get defaultClientOptions => ClientOptions(
   clients: {
     'app': ClientLoader((p) => _app.App(), loader: _app.loadLibrary),
+    'home': ClientLoader((p) => _home.Home(), loader: _home.loadLibrary),
     'login': ClientLoader(
       (p) => _login.LoginPage(),
       loader: _login.loadLibrary,

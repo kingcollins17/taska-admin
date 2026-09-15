@@ -2,11 +2,11 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 import 'package:jaspr_router/jaspr_router.dart';
+import 'package:taska_admin/core/providers/network_providers.dart';
 
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
-import '../core/designs/text_styles.dart';
 import '../core/models/clients/auth/accept_invitation_request.dart';
 import '../core/models/clients/auth/login_request.dart';
 import '../core/providers/admin_providers.dart';
@@ -23,8 +23,8 @@ class LoginPage extends StatelessComponent {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
 
     return div(
-      classes:
-          'flex min-h-screen w-full flex-col lg:flex-row lg:gap-8 lg:p-5 bg-[${colorScheme.surface}]',
+      classes: 'flex min-h-screen w-full flex-col lg:flex-row lg:gap-8 lg:p-5',
+      styles: Styles(backgroundColor: Color(colorScheme.surface)),
       [
         const _LoginForm(),
         const _SidePanel(),
@@ -130,6 +130,7 @@ class _LoginFormState extends State<_LoginForm> {
           setState(() {
             isLoading = false;
           });
+          context.invalidate(isAuthenticatedProvider);
           Router.of(context).push('/');
         },
         onError: (message) {
@@ -151,13 +152,15 @@ class _LoginFormState extends State<_LoginForm> {
 
     return div(
       classes: 'flex w-full flex-col px-7 py-10 sm:px-12 lg:w-[43%] lg:px-16 lg:py-10',
+      styles: Styles(backgroundColor: Color(colorScheme.surface)),
       [
         buildWordmark(colorScheme),
         div(
           classes: 'flex flex-1 flex-col justify-center py-12 lg:py-0',
           [
             div(
-              classes: 'w-full max-w-[420px] space-y-6',
+              key: Key(isSignUp ? 'signup-container' : 'login-container'),
+              classes: 'w-full max-w-[420px] space-y-6 animate-fade-in-scaled',
               [
                 buildHeading(colorScheme),
                 buildForm(colorScheme),
@@ -172,11 +175,12 @@ class _LoginFormState extends State<_LoginForm> {
   Component buildWordmark(ColorScheme colorScheme) {
     return a(
       href: '/',
-      classes: '${AppTextStyles.wordmark} text-[${colorScheme.textHeading}] no-underline',
+      classes: 'text-2xl font-extrabold tracking-tight no-underline',
+      styles: Styles(color: Color(colorScheme.textHeading)),
       [
         Component.text('Taska'),
         span(
-          classes: 'text-[${colorScheme.primary}]',
+          styles: Styles(color: Color(colorScheme.primary)),
           [Component.text('.')],
         ),
       ],
@@ -202,17 +206,19 @@ class _LoginFormState extends State<_LoginForm> {
       classes: 'flex flex-wrap items-baseline gap-x-4 gap-y-2',
       [
         h1(
-          classes: '${AppTextStyles.h1} text-[${colorScheme.textPrimary}]',
+          classes: 'text-[2rem] font-extrabold leading-tight tracking-tight',
+          styles: Styles(color: Color(colorScheme.textPrimary)),
           [Component.text(title)],
         ),
         span(
-          classes: '${AppTextStyles.bodySmall} text-[${colorScheme.textMuted}]',
+          classes: 'text-sm',
+          styles: Styles(color: Color(colorScheme.textMuted)),
           [
             Component.text(prompt),
             button(
               type: ButtonType.button,
-              classes: 'cursor-pointer border-none bg-transparent p-0 ${AppTextStyles.link} '
-                  'text-[${colorScheme.primary}] hover:text-[${colorScheme.primaryHover}]',
+              classes: 'cursor-pointer border-none bg-transparent p-0 text-sm font-semibold underline underline-offset-4 transition-colors',
+              styles: Styles(color: Color(colorScheme.primary)),
               events: {
                 'click': (event) {
                   toggleAuthMode();
@@ -278,12 +284,9 @@ class _LoginFormState extends State<_LoginForm> {
           type: ButtonType.submit,
           disabled: isLoading,
           classes: isLoading
-              ? 'w-full cursor-not-allowed rounded-full border-none bg-slate-400 dark:bg-slate-700 py-4 ${AppTextStyles.button} '
-                'text-white opacity-60 transition-colors duration-200'
-              : 'w-full cursor-pointer rounded-full border-none bg-[${colorScheme.primary}] py-4 ${AppTextStyles.button} '
-                'text-white shadow-[0_10px_25px_-5px_rgba(0,168,112,0.4)] transition-colors duration-200 '
-                'hover:bg-[${colorScheme.primaryHover}] focus-visible:outline-2 focus-visible:outline-offset-2 '
-                'focus-visible:outline-[${colorScheme.primaryHover}]',
+              ? 'w-full cursor-not-allowed rounded-full border-none bg-slate-400 py-4 text-sm font-bold uppercase tracking-[0.12em] text-white opacity-60 transition-colors duration-200'
+              : 'w-full cursor-pointer rounded-full border-none py-4 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-[0_10px_25px_-5px_rgba(0,168,112,0.4)] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2',
+          styles: Styles(backgroundColor: Color(colorScheme.primary)),
           events: {
             'click': (event) {
               if (isLoading) {
@@ -322,8 +325,8 @@ class _LoginFormState extends State<_LoginForm> {
       trailing: button(
         type: ButtonType.button,
         classes:
-            'absolute right-5 flex cursor-pointer items-center justify-center border-none '
-            'bg-transparent p-1 text-[${colorScheme.placeholder}] transition-colors hover:text-[${colorScheme.primary}]',
+            'absolute right-5 flex cursor-pointer items-center justify-center border-none bg-transparent p-1 transition-colors',
+        styles: Styles(color: Color(colorScheme.placeholder)),
         attributes: {'aria-label': passwordAction},
         events: {
           'click': (event) {
@@ -346,8 +349,8 @@ class _LoginFormState extends State<_LoginForm> {
           Component.text('I agree to the '),
           a(
             href: '#',
-            classes: '${AppTextStyles.link} text-[${colorScheme.primary}] '
-                'hover:text-[${colorScheme.primaryHover}]',
+            classes: 'text-sm font-semibold underline underline-offset-4 transition-colors',
+            styles: Styles(color: Color(colorScheme.primary)),
             [Component.text('Terms & Privacy')],
           ),
         ],
@@ -365,8 +368,8 @@ class _LoginFormState extends State<_LoginForm> {
         ),
         a(
           href: '#',
-          classes: '${AppTextStyles.link} text-[${colorScheme.primary}] '
-              'hover:text-[${colorScheme.primaryHover}]',
+          classes: 'text-sm font-semibold underline underline-offset-4 transition-colors',
+          styles: Styles(color: Color(colorScheme.primary)),
           [Component.text('Forgot your password?')],
         ),
       ],
@@ -386,14 +389,18 @@ class _SidePanel extends StatelessComponent {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
 
     return div(
-      classes: 'relative flex w-full flex-col overflow-hidden '
-          'bg-[linear-gradient(135deg,${colorScheme.primaryDarkest}_0%,${colorScheme.primaryDark}_30%,${colorScheme.primaryHover}_60%,${colorScheme.primary}_100%)] '
-          'p-8 text-white lg:w-[57%] lg:rounded-[32px] lg:p-12',
+      classes: 'relative flex w-full flex-col overflow-hidden p-8 text-white lg:w-[57%] lg:rounded-[32px] lg:p-12',
+      styles: Styles(
+        raw: {
+          'background':
+              'linear-gradient(135deg, ${colorScheme.primaryDarkest} 0%, ${colorScheme.primaryDark} 30%, ${colorScheme.primaryHover} 60%, ${colorScheme.primary} 100%)',
+        },
+      ),
       [
         buildGlow(),
         buildContent(colorScheme),
         span(
-          classes: 'relative z-10 ${AppTextStyles.caption} text-white/65',
+          classes: 'relative z-10 text-sm font-medium text-white/65',
           [Component.text('© 2026 Taska Workspace. All rights reserved.')],
         ),
       ],
@@ -421,7 +428,7 @@ class _SidePanel extends StatelessComponent {
       [
         buildBadge(colorScheme),
         h2(
-          classes: '${AppTextStyles.h2} leading-tight text-white',
+          classes: 'text-[2.25rem] font-black leading-[1.12] tracking-[-0.025em] lg:text-[3.25rem] leading-tight text-white',
           [
             Component.text('Empowering Seamless '),
             span(
@@ -432,7 +439,7 @@ class _SidePanel extends StatelessComponent {
           ],
         ),
         p(
-          classes: '${AppTextStyles.body} max-w-lg text-white/80',
+          classes: 'text-[1.05rem] leading-relaxed max-w-lg text-white/80',
           [
             Component.text(
               'The central hub for administrative oversight, customer service management, and escrow control.',
@@ -449,9 +456,13 @@ class _SidePanel extends StatelessComponent {
       classes:
           'inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-4 py-1.5 backdrop-blur-md',
       [
-        span(classes: 'h-2 w-2 rounded-full bg-[${colorScheme.mint}] animate-pulse', []),
         span(
-          classes: '${AppTextStyles.caption} font-semibold uppercase tracking-wider text-white',
+          classes: 'h-2 w-2 rounded-full animate-pulse',
+          styles: Styles(backgroundColor: Color(colorScheme.mint)),
+          [],
+        ),
+        span(
+          classes: 'text-xs font-bold tracking-[0.12em] font-semibold uppercase tracking-wider text-white',
           [Component.text('Taska Admin Hub')],
         ),
       ],
@@ -492,9 +503,17 @@ class _SidePanel extends StatelessComponent {
       [
         div(
           classes:
-              'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(0,245,160,0.2)] text-[${colorScheme.mint}]',
+              'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full',
+          styles: Styles(
+            backgroundColor: Color.rgba(0, 245, 160, 0.2),
+            color: Color(colorScheme.mint),
+          ),
           [
-            span(classes: 'h-2 w-2 rounded-full bg-[${colorScheme.mint}]', []),
+            span(
+              classes: 'h-2 w-2 rounded-full',
+              styles: Styles(backgroundColor: Color(colorScheme.mint)),
+              [],
+            ),
           ],
         ),
         div(
@@ -536,17 +555,13 @@ class _TextField extends StatelessComponent {
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
 
-    final baseClasses = trailing == null
-        ? 'w-full rounded-full border border-[${colorScheme.border}] bg-[${colorScheme.inputBg}] px-6 py-4 '
-          '${AppTextStyles.input} text-[${colorScheme.textPrimary}] placeholder:text-[${colorScheme.placeholder}] '
-          'transition-colors duration-200 focus:border-[${colorScheme.primary}] '
-          'focus:ring-4 focus:ring-[rgba(0,168,112,0.12)]'
-        : 'w-full rounded-full border border-[${colorScheme.border}] bg-[${colorScheme.inputBg}] py-4 pl-6 pr-14 '
-          '${AppTextStyles.input} text-[${colorScheme.textPrimary}] placeholder:text-[${colorScheme.placeholder}] '
-          'transition-colors duration-200 focus:border-[${colorScheme.primary}] '
-          'focus:ring-4 focus:ring-[rgba(0,168,112,0.12)]';
-
-    final fieldClasses = disabled ? '$baseClasses opacity-50 cursor-not-allowed' : baseClasses;
+    final fieldClasses = trailing == null
+        ? (disabled
+            ? 'w-full rounded-full border px-6 py-4 text-[0.95rem] outline-none transition-colors duration-200 focus:ring-4 focus:ring-[rgba(0,168,112,0.12)] opacity-50 cursor-not-allowed'
+            : 'w-full rounded-full border px-6 py-4 text-[0.95rem] outline-none transition-colors duration-200 focus:ring-4 focus:ring-[rgba(0,168,112,0.12)]')
+        : (disabled
+            ? 'w-full rounded-full border py-4 pl-6 pr-14 text-[0.95rem] outline-none transition-colors duration-200 focus:ring-4 focus:ring-[rgba(0,168,112,0.12)] opacity-50 cursor-not-allowed'
+            : 'w-full rounded-full border py-4 pl-6 pr-14 text-[0.95rem] outline-none transition-colors duration-200 focus:ring-4 focus:ring-[rgba(0,168,112,0.12)]');
 
     return div(
       classes: 'relative flex items-center',
@@ -554,6 +569,13 @@ class _TextField extends StatelessComponent {
         input(
           type: type,
           classes: fieldClasses,
+          styles: Styles(
+            raw: {
+              'border-color': colorScheme.border,
+              'background-color': colorScheme.inputBg,
+              'color': colorScheme.textPrimary,
+            },
+          ),
           value: value,
           disabled: disabled,
           attributes: {
@@ -598,8 +620,13 @@ class _CheckboxRow extends StatelessComponent {
         input(
           type: InputType.checkbox,
           checked: checked,
-          classes:
-              'h-[18px] w-[18px] cursor-pointer rounded-md border-[${colorScheme.borderInput}] accent-[${colorScheme.primary}]',
+          classes: 'h-[18px] w-[18px] cursor-pointer rounded-md border',
+          styles: Styles(
+            raw: {
+              'border-color': colorScheme.borderInput,
+              'accent-color': colorScheme.primary,
+            },
+          ),
           attributes: {
             'id': id,
           },
@@ -612,8 +639,8 @@ class _CheckboxRow extends StatelessComponent {
         ),
         label(
           attributes: {'for': id},
-          classes:
-              'cursor-pointer select-none ${AppTextStyles.bodySmall} text-[${colorScheme.textMuted}]',
+          classes: 'cursor-pointer select-none text-sm',
+          styles: Styles(color: Color(colorScheme.textMuted)),
           content,
         ),
       ],

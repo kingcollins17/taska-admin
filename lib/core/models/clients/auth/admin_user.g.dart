@@ -13,6 +13,10 @@ AdminUser _$AdminUserFromJson(Map<String, dynamic> json) => AdminUser(
   role: json['role'] as String?,
   parentAdminId: json['parent_admin_id'] as String?,
   createdById: json['created_by_id'] as String?,
+  regionId: json['region_id'] as String?,
+  region: json['region'] == null
+      ? null
+      : AdminRegion.fromJson(json['region'] as Map<String, dynamic>),
   isActive: json['is_active'] as bool?,
   lastLoginAt: json['last_login_at'] == null
       ? null
@@ -32,6 +36,8 @@ Map<String, dynamic> _$AdminUserToJson(AdminUser instance) => <String, dynamic>{
   'role': instance.role,
   'parent_admin_id': instance.parentAdminId,
   'created_by_id': instance.createdById,
+  'region_id': instance.regionId,
+  'region': instance.region,
   'is_active': instance.isActive,
   'last_login_at': instance.lastLoginAt?.toIso8601String(),
   'created_at': instance.createdAt?.toIso8601String(),

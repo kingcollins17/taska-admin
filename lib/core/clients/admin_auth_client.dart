@@ -36,4 +36,7 @@ abstract class AdminAuthClient {
   Future<BaseApiResponse<LoginResponseData>> refreshToken(
     @Body() RefreshTokenRequest request,
   );
+
+  @GET('/admin/auth/me')
+  Future<BaseApiResponse<AdminUser>> getMe();
 }

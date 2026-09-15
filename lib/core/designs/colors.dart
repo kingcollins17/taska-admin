@@ -47,7 +47,7 @@ class ColorScheme {
     this.primaryDark = '#004D33',
     this.primaryDarkest = '#00281B',
     this.mint = '#00F5A0',
-    this.background = '#F3F6F4',
+    this.background = '#FFFFFF',
     this.surface = '#FFFFFF',
     this.inputBg = '#FFFFFF',
     this.textHeading = '#0B0F0E',
@@ -66,7 +66,7 @@ class ColorScheme {
     this.primaryDark = '#004D33',
     this.primaryDarkest = '#001A12',
     this.mint = '#00F5A0',
-    this.background = '#0B0F0E',
+    this.background = '#121816',
     this.surface = '#121816',
     this.inputBg = '#19221E',
     this.textHeading = '#FFFFFF',
@@ -81,6 +81,9 @@ class ColorScheme {
 
   bool get isDark => brightness == AppBrightness.dark;
   bool get isLight => brightness == AppBrightness.light;
+
+  static const  darkScheme =ColorScheme.dark();
+  static const lightScheme =ColorScheme.light();
 }
 
 typedef AppColorScheme = ColorScheme;
