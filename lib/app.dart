@@ -203,9 +203,77 @@ class App extends StatelessComponent {
       ),
       if (uiState.isSidePanelOpen && uiState.sidePanel != null)
         buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
+      if (uiState.isDialogOpen && uiState.dialog != null)
+        buildDialogOverlay(context, uiState.dialog!, uiState.dialogTitle),
       if (uiState.flushbar != null)
         buildFlushbar(context, uiState.flushbar!),
     ]);
+  }
+
+  Component buildDialogOverlay(BuildContext context, Component content, String? title) {
+    final colorScheme = context.colorScheme;
+
+    return div(
+      classes:
+          'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-backdrop-in',
+      events: {
+        'click': (event) {
+          context.hideDialog();
+        },
+      },
+      [
+        div(
+          classes:
+              'w-full max-w-lg rounded-2xl shadow-2xl border flex flex-col relative transition-colors duration-200 overflow-hidden animate-fade-in-scaled',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.background),
+            raw: {'border-color': colorScheme.border},
+          ),
+          events: {
+            'click': (event) {
+              event.stopPropagation();
+            },
+          },
+          [
+            if (title != null && title.isNotEmpty)
+              div(
+                classes:
+                    'sticky top-0 z-20 px-6 py-4 border-b flex items-center justify-between shrink-0 transition-colors duration-200',
+                styles: Styles(
+                  backgroundColor: Color(colorScheme.surface),
+                  raw: {'border-color': colorScheme.border},
+                ),
+                [
+                  h3(
+                    classes: 'text-base font-extrabold leading-tight',
+                    styles: Styles(color: Color(colorScheme.textHeading)),
+                    [
+                      Component.text(title),
+                    ],
+                  ),
+                  button(
+                    type: ButtonType.button,
+                    classes:
+                        'w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer border-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800',
+                    styles: Styles(color: Color(colorScheme.textMuted)),
+                    events: {
+                      'click': (e) {
+                        context.hideDialog();
+                      },
+                    },
+                    [
+                      span(classes: 'text-sm font-bold', [Component.text('✕')]),
+                    ],
+                  ),
+                ],
+              ),
+            div(classes: 'p-6 space-y-6 flex-1 overflow-y-auto max-h-[85vh]', [
+              content,
+            ]),
+          ],
+        ),
+      ],
+    );
   }
 
   Component buildSidePanelOverlay(BuildContext context, Component content, String? title) {

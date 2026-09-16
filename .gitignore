@@ -5,7 +5,7 @@
 node_modules
 .vscode
 # Conventional directory for build output.
-/build/
+# /build/
 
 # Miscellaneous
 *.class

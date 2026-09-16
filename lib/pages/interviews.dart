@@ -4,10 +4,12 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
+import '../components/schedule_interview_dialog.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/providers/admin_user_providers.dart';
+import '../core/providers/stats_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
@@ -61,15 +63,14 @@ class _Dashboard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final interviewsAsync = context.watch(adminInterviewsProvider(const GetInterviewsParams(page: 1)));
+    final statsAsync = context.watch(adminInterviewStatsProvider);
 
-    return interviewsAsync.when(
-      data: (paginatedData) {
-        final items = paginatedData?.items ?? [];
-        final total = paginatedData?.total ?? items.length;
-        final passedCount = items.where((interview) => interview.status == 'PASSED').length;
-        final scheduledCount = items.where((interview) => interview.status == 'SCHEDULED' || interview.status == 'RESCHEDULED').length;
-        final failedCount = items.where((interview) => interview.status == 'FAILED' || interview.status == 'CANCELLED').length;
+    return statsAsync.when(
+      data: (stats) {
+        final total = stats?.totalInterviews ?? 0;
+        final passedCount = stats?.totalPassed ?? 0;
+        final scheduledCount = (stats?.totalScheduled ?? 0) + (stats?.totalRescheduled ?? 0);
+        final failedCount = (stats?.totalFailed ?? 0) + (stats?.totalCancelled ?? 0);
 
         return div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', [
           _MetricCard(
@@ -306,11 +307,7 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                 // Schedule Interview Primary Button
                 button(
                   onClick: () {
-                    context.showFlushbar(
-                      title: 'Schedule Interview',
-                      message: 'Opening interview scheduling workspace...',
-                      type: FlushbarType.info,
-                    );
+                    ScheduleInterviewDialog.show(context);
                   },
                   classes:
                       'active:scale-[0.98] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer border-none',

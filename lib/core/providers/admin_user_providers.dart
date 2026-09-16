@@ -13,6 +13,7 @@ import '../models/clients/vetting/admin_guarantor_item.dart';
 import '../models/clients/vetting/admin_interview_item.dart';
 import '../models/clients/vetting/admin_kyc_document_item.dart';
 import '../models/clients/vetting/admin_reject_vetting_body.dart';
+import '../models/clients/vetting/admin_schedule_interview_body.dart';
 import '../utils/error_handler.dart';
 
 class GetUsersParams {
@@ -551,6 +552,32 @@ class AdminUserManagement extends AsyncNotifier<void> {
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to deactivate user';
+        state = AsyncError(errorMsg, StackTrace.current);
+        onError?.call(errorMsg);
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handle(e, stackTrace);
+      final errorMsg = _extractErrorMessage(e);
+      state = AsyncError(errorMsg, stackTrace);
+      onError?.call(errorMsg);
+    }
+  }
+
+  Future<void> scheduleInterview(
+    AdminScheduleInterviewBody body, {
+    void Function()? onSuccess,
+    void Function(String message)? onError,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final client = ref.read(adminUserClientProvider);
+      final response = await client.scheduleInterview(body);
+
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        state = const AsyncData(null);
+        onSuccess?.call();
+      } else {
+        final errorMsg = response.message ?? response.detail ?? 'Failed to schedule interview';
         state = AsyncError(errorMsg, StackTrace.current);
         onError?.call(errorMsg);
       }

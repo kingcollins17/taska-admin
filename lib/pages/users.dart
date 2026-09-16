@@ -9,6 +9,7 @@ import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/providers/admin_user_providers.dart';
+import '../core/providers/stats_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
@@ -67,15 +68,14 @@ class _Dashboard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final usersAsync = context.watch(adminUsersProvider(const GetUsersParams(page: 1)));
+    final statsAsync = context.watch(adminUserStatsProvider);
 
-    return usersAsync.when(
-      data: (paginatedData) {
-        final items = paginatedData?.items ?? [];
-        final total = paginatedData?.total ?? items.length;
-        final activeCount = items.where((user) => user.isActive == true).length;
-        final customerCount = items.where((user) => user.type == 'CUSTOMER').length;
-        final providerCount = items.where((user) => user.type == 'PROVIDER').length;
+    return statsAsync.when(
+      data: (stats) {
+        final total = stats?.totalUsers ?? 0;
+        final activeCount = stats?.totalActive ?? 0;
+        final customerCount = stats?.totalCustomers ?? 0;
+        final providerCount = stats?.totalProviders ?? 0;
 
         return div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', [
           _MetricCard(

@@ -8,6 +8,7 @@ import '../core/designs/components/app_icon.dart';
 import '../core/models/clients/users/admin_platform_user_item.dart';
 import '../core/providers/admin_user_providers.dart';
 import '../core/providers/ui_state_provider.dart';
+import 'schedule_interview_dialog.dart';
 
 class PlatformUserDetailSidePanel extends StatefulComponent {
   final AdminPlatformUserItem user;
@@ -225,30 +226,57 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
                 ),
               ]),
 
-              // Quick Copy ID Button Chip
-              button(
-                type: ButtonType.button,
-                classes:
-                    'px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95 shadow-sm border',
-                styles: Styles(
-                  backgroundColor: isDark ? Color.rgba(16, 185, 129, 0.15) : Color.rgba(16, 185, 129, 0.08),
-                  color: isDark ? Color.rgba(110, 231, 183, 1.0) : Color.rgba(4, 120, 87, 1.0),
-                  raw: {'border-color': isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(16, 185, 129, 0.25)'},
-                ),
-                events: {
-                  'click': (_) => _copyToClipboard(context, user.id ?? '', 'User ID'),
-                },
-                [
-                  div(
-                    classes: 'w-3.5 h-3.5 shrink-0',
-                    styles: Styles(color: Color(colorScheme.primary)),
-                    [
-                      const AppIcon(AppIcons.copy),
-                    ],
+              div(classes: 'flex items-center space-x-2', [
+                // Quick Copy ID Button Chip
+                button(
+                  type: ButtonType.button,
+                  classes:
+                      'px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95 shadow-sm border',
+                  styles: Styles(
+                    backgroundColor: isDark ? Color.rgba(16, 185, 129, 0.15) : Color.rgba(16, 185, 129, 0.08),
+                    color: isDark ? Color.rgba(110, 231, 183, 1.0) : Color.rgba(4, 120, 87, 1.0),
+                    raw: {'border-color': isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(16, 185, 129, 0.25)'},
                   ),
-                  span([Component.text('Copy ID')]),
-                ],
-              ),
+                  events: {
+                    'click': (_) => _copyToClipboard(context, user.id ?? '', 'User ID'),
+                  },
+                  [
+                    div(
+                      classes: 'w-3.5 h-3.5 shrink-0',
+                      styles: Styles(color: Color(colorScheme.primary)),
+                      [
+                        const AppIcon(AppIcons.copy),
+                      ],
+                    ),
+                    span([Component.text('Copy ID')]),
+                  ],
+                ),
+
+                // Schedule Interview Button Chip
+                button(
+                  type: ButtonType.button,
+                  classes:
+                      'px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95 shadow-sm border text-white border-none',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.primary),
+                  ),
+                  events: {
+                    'click': (_) {
+                      context.hideSidePanel();
+                      ScheduleInterviewDialog.show(context, userId: user.id, user: user);
+                    },
+                  },
+                  [
+                    div(
+                      classes: 'w-3.5 h-3.5 shrink-0',
+                      [
+                        const AppIcon(AppIcons.calendar),
+                      ],
+                    ),
+                    span([Component.text('Schedule Interview')]),
+                  ],
+                ),
+              ]),
             ],
           ),
         ],

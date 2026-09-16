@@ -5,6 +5,10 @@ import 'package:taska_admin/core/providers/network_providers.dart';
 
 import '../models/clients/base_response.dart';
 import '../models/clients/dashboard/admin_dashboard_overview.dart';
+import '../models/clients/dashboard/admin_guarantor_stats.dart';
+import '../models/clients/dashboard/admin_interview_stats.dart';
+import '../models/clients/dashboard/admin_kyc_stats.dart';
+import '../models/clients/dashboard/admin_user_stats.dart';
 import '../models/clients/users/admin_platform_user_item.dart';
 import '../models/clients/users/admin_user_detail.dart';
 import '../models/clients/users/admin_user_status_update_body.dart';
@@ -13,6 +17,7 @@ import '../models/clients/vetting/admin_guarantor_item.dart';
 import '../models/clients/vetting/admin_interview_item.dart';
 import '../models/clients/vetting/admin_kyc_document_item.dart';
 import '../models/clients/vetting/admin_reject_vetting_body.dart';
+import '../models/clients/vetting/admin_schedule_interview_body.dart';
 
 part 'admin_user_client.g.dart';
 
@@ -27,6 +32,18 @@ abstract class AdminUserClient {
 
   @GET('/admin/dashboard/overview')
   Future<BaseApiResponse<AdminDashboardOverview>> getDashboardOverview();
+
+  @GET('/admin/dashboard/user-stats')
+  Future<BaseApiResponse<AdminUserStats>> getUserStats();
+
+  @GET('/admin/dashboard/kyc-stats')
+  Future<BaseApiResponse<AdminKycStats>> getKycStats();
+
+  @GET('/admin/dashboard/guarantor-stats')
+  Future<BaseApiResponse<AdminGuarantorStats>> getGuarantorStats();
+
+  @GET('/admin/dashboard/interview-stats')
+  Future<BaseApiResponse<AdminInterviewStats>> getInterviewStats();
 
   @GET('/users/admin')
   Future<BaseApiResponse<PaginatedData<AdminPlatformUserItem>>> getUsers({
@@ -140,5 +157,10 @@ abstract class AdminUserClient {
   Future<BaseApiResponse<dynamic>> rejectKyc(
     @Path('user_id') String userId,
     @Body() AdminRejectVettingBody body,
+  );
+
+  @POST('/vetting/admin/interviews/schedule')
+  Future<BaseApiResponse<dynamic>> scheduleInterview(
+    @Body() AdminScheduleInterviewBody body,
   );
 }

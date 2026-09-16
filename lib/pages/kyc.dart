@@ -9,6 +9,7 @@ import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/providers/admin_user_providers.dart';
+import '../core/providers/stats_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
@@ -62,15 +63,14 @@ class _Dashboard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final kycAsync = context.watch(adminKycDocumentsProvider(const GetKycDocumentsParams(page: 1)));
+    final statsAsync = context.watch(adminKycStatsProvider);
 
-    return kycAsync.when(
-      data: (paginatedData) {
-        final items = paginatedData?.items ?? [];
-        final total = paginatedData?.total ?? items.length;
-        final verifiedCount = items.where((doc) => doc.status == 'VERIFIED').length;
-        final pendingCount = items.where((doc) => doc.status == 'SUBMITTED' || doc.status == 'UNDER_REVIEW' || doc.status == 'PENDING_SUBMISSION').length;
-        final failedCount = items.where((doc) => doc.status == 'FAILED').length;
+    return statsAsync.when(
+      data: (stats) {
+        final total = stats?.totalDocuments ?? 0;
+        final verifiedCount = stats?.totalVerified ?? 0;
+        final pendingCount = (stats?.totalPending ?? 0) + (stats?.totalSubmitted ?? 0) + (stats?.totalUnderReview ?? 0);
+        final failedCount = stats?.totalRejected ?? 0;
 
         return div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', [
           _MetricCard(

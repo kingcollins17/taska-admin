@@ -39,6 +39,9 @@ class UIState {
   final Component? sidePanel;
   final String? sidePanelTitle;
   final bool isSidePanelOpen;
+  final Component? dialog;
+  final String? dialogTitle;
+  final bool isDialogOpen;
   final FlushbarConfig? flushbar;
 
   const UIState({
@@ -46,6 +49,9 @@ class UIState {
     this.sidePanel,
     this.sidePanelTitle,
     this.isSidePanelOpen = false,
+    this.dialog,
+    this.dialogTitle,
+    this.isDialogOpen = false,
     this.flushbar,
   });
 
@@ -60,15 +66,19 @@ class UIState {
   }
 
   ColorScheme get colorScheme =>
-      isDarkMode ?  ColorScheme.darkScheme:  ColorScheme.lightScheme;
+      isDarkMode ? ColorScheme.darkScheme : ColorScheme.lightScheme;
 
   UIState copyWith({
     ThemeMode? themeMode,
     Component? sidePanel,
     String? sidePanelTitle,
     bool? isSidePanelOpen,
+    Component? dialog,
+    String? dialogTitle,
+    bool? isDialogOpen,
     FlushbarConfig? flushbar,
     bool clearSidePanel = false,
+    bool clearDialog = false,
     bool clearFlushbar = false,
   }) {
     return UIState(
@@ -76,12 +86,15 @@ class UIState {
       sidePanel: clearSidePanel ? null : (sidePanel ?? this.sidePanel),
       sidePanelTitle: clearSidePanel ? null : (sidePanelTitle ?? this.sidePanelTitle),
       isSidePanelOpen: isSidePanelOpen ?? (clearSidePanel ? false : this.isSidePanelOpen),
+      dialog: clearDialog ? null : (dialog ?? this.dialog),
+      dialogTitle: clearDialog ? null : (dialogTitle ?? this.dialogTitle),
+      isDialogOpen: isDialogOpen ?? (clearDialog ? false : this.isDialogOpen),
       flushbar: clearFlushbar ? null : (flushbar ?? this.flushbar),
     );
   }
 
   @override
-  toString() => {'themeMode': themeMode.toString(), 'isSidePanelOpen': isSidePanelOpen}.toString();
+  toString() => {'themeMode': themeMode.toString(), 'isSidePanelOpen': isSidePanelOpen, 'isDialogOpen': isDialogOpen}.toString();
 }
 
 final uiStateProvider = NotifierProvider<UIStateNotifier, UIState>(UIStateNotifier.new);
@@ -130,6 +143,21 @@ class UIStateNotifier extends Notifier<UIState> {
     );
   }
 
+  void showDialog(Component component, {String? title}) {
+    state = state.copyWith(
+      dialog: component,
+      dialogTitle: title,
+      isDialogOpen: true,
+    );
+  }
+
+  void hideDialog() {
+    state = state.copyWith(
+      clearDialog: true,
+      isDialogOpen: false,
+    );
+  }
+
   void showFlushbar({
     required String message,
     String? title,
@@ -161,6 +189,14 @@ extension BuildContextUIExtensions on BuildContext {
 
   void hideSidePanel() {
     read(uiStateProvider.notifier).hideSidePanel();
+  }
+
+  void showDialog(Component component, {String? title}) {
+    read(uiStateProvider.notifier).showDialog(component, title: title);
+  }
+
+  void hideDialog() {
+    read(uiStateProvider.notifier).hideDialog();
   }
 
   void showFlushbar({
