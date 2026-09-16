@@ -5,10 +5,15 @@ import 'package:jaspr_router/jaspr_router.dart';
 
 import 'components/sidebar.dart';
 import 'components/top_bar.dart';
+import 'core/designs/app_icons.dart';
+import 'core/designs/components/app_icon.dart';
 import 'core/providers/ui_state_provider.dart';
 import 'core/services/local_storage.dart';
 import 'pages/about.dart';
+import 'pages/guarantors.dart';
 import 'pages/home.dart';
+import 'pages/interviews.dart';
+import 'pages/kyc.dart';
 import 'pages/login.dart';
 import 'pages/users.dart';
 
@@ -55,11 +60,31 @@ class App extends StatelessComponent {
             ShellRoute(
               builder: (context, state, child) {
                 var activePath = state.location;
-                var title = 'Overview';
+                var title = 'Dashboard';
                 if (activePath == '/about') {
                   title = 'About Taska';
                 } else if (activePath == '/users' || activePath == '/customers') {
-                  title = 'User Management';
+                  title = 'Users Management';
+                } else if (activePath == '/kyc') {
+                  title = 'KYC Verification';
+                } else if (activePath == '/guarantors') {
+                  title = 'Guarantors Management';
+                } else if (activePath == '/interviews') {
+                  title = 'Provider Interviews';
+                } else if (activePath == '/tasks') {
+                  title = 'Tasks Management';
+                } else if (activePath == '/disputes') {
+                  title = 'Disputes & Claims';
+                } else if (activePath == '/support' || activePath == '/help') {
+                  title = 'Support & Help Desk';
+                } else if (activePath == '/payments' || activePath == '/transactions') {
+                  title = 'Payments & Finance';
+                } else if (activePath == '/administrators') {
+                  title = 'Administrators & Roles';
+                } else if (activePath == '/audit-logs') {
+                  title = 'Audit Logs';
+                } else if (activePath == '/settings') {
+                  title = 'System Settings';
                 }
 
                 return div(
@@ -83,18 +108,89 @@ class App extends StatelessComponent {
             routes: [
               Route(
                 path: '/',
-                title: 'Taska Admin - Overview',
+                title: 'Taska Admin - Dashboard',
                 builder: (context, state) => const Home(),
               ),
               Route(
                 path: '/users',
-                title: 'Taska Admin - User Management',
+                title: 'Taska Admin - Users',
                 builder: (context, state) => const UsersPage(),
               ),
               Route(
                 path: '/customers',
-                title: 'Taska Admin - User Management',
+                title: 'Taska Admin - Users',
                 builder: (context, state) => const UsersPage(),
+              ),
+              Route(
+                path: '/kyc',
+                title: 'Taska Admin - KYC Verification',
+                builder: (context, state) => const KycPage(),
+              ),
+              Route(
+                path: '/guarantors',
+                title: 'Taska Admin - Guarantors',
+                builder: (context, state) => const GuarantorsPage(),
+              ),
+              Route(
+                path: '/interviews',
+                title: 'Taska Admin - Interviews',
+                builder: (context, state) => const InterviewsPage(),
+              ),
+              Route(
+                path: '/tasks',
+                title: 'Taska Admin - Tasks',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'Tasks Management',
+                  description: 'Monitor active tasks, job assignments, completion metrics, and status logs.',
+                ),
+              ),
+              Route(
+                path: '/disputes',
+                title: 'Taska Admin - Disputes',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'Disputes & Resolution',
+                  description: 'Track open customer disputes, arbitration tickets, and resolution history.',
+                ),
+              ),
+              Route(
+                path: '/support',
+                title: 'Taska Admin - Support',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'Support Center',
+                  description: 'Manage help requests, support tickets, customer inquiries, and live chats.',
+                ),
+              ),
+              Route(
+                path: '/payments',
+                title: 'Taska Admin - Payments',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'Payments & Transactions',
+                  description: 'View payout history, transaction ledgers, escrow holds, and gateway logs.',
+                ),
+              ),
+              Route(
+                path: '/administrators',
+                title: 'Taska Admin - Administrators',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'Administrators & Roles',
+                  description: 'Manage admin accounts, access permissions, team roles, and security policies.',
+                ),
+              ),
+              Route(
+                path: '/audit-logs',
+                title: 'Taska Admin - Audit Logs',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'Audit & System Logs',
+                  description: 'Inspect system events, admin action logs, API access history, and security audits.',
+                ),
+              ),
+              Route(
+                path: '/settings',
+                title: 'Taska Admin - Settings',
+                builder: (context, state) => const _PlaceholderPage(
+                  title: 'System Settings',
+                  description: 'Configure application parameters, notification services, integrations, and branding.',
+                ),
               ),
               Route(
                 path: '/about',
@@ -106,16 +202,19 @@ class App extends StatelessComponent {
         ],
       ),
       if (uiState.isSidePanelOpen && uiState.sidePanel != null)
-        buildSidePanelOverlay(context, uiState.sidePanel!),
+        buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
       if (uiState.flushbar != null)
         buildFlushbar(context, uiState.flushbar!),
     ]);
   }
 
-  Component buildSidePanelOverlay(BuildContext context, Component content) {
+  Component buildSidePanelOverlay(BuildContext context, Component content, String? title) {
+    final colorScheme = context.colorScheme;
+    final isDark = colorScheme.isDark;
+
     return div(
       classes:
-          'fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm transition-opacity animate-fade-in',
+          'fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-md animate-backdrop-in',
       events: {
         'click': (event) {
           context.hideSidePanel();
@@ -124,7 +223,11 @@ class App extends StatelessComponent {
       [
         div(
           classes:
-              'h-full w-full max-w-md ml-auto bg-white dark:bg-[#121816] shadow-2xl p-6 overflow-y-auto border-l border-slate-200 dark:border-slate-800 animate-slide-left',
+              'h-full w-full max-w-md sm:max-w-lg ml-auto shadow-2xl border-l animate-side-panel-in flex flex-col relative transition-colors duration-200',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.background),
+            raw: {'border-color': colorScheme.border},
+          ),
           events: {
             'click': (event) {
               event.stopPropagation();
@@ -133,25 +236,61 @@ class App extends StatelessComponent {
           [
             div(
               classes:
-                  'flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4',
+                  'sticky top-0 z-20 px-6 py-4 border-b flex items-center justify-between shrink-0 transition-colors duration-200',
+              styles: Styles(
+                backgroundColor: Color(colorScheme.surface),
+                raw: {'border-color': colorScheme.border},
+              ),
               [
-                h3(classes: 'text-lg font-bold text-slate-900 dark:text-white', [
-                  Component.text('Panel'),
+                div(classes: 'flex items-center space-x-3', [
+                  div(
+                    classes:
+                        'w-9 h-9 rounded-xl flex items-center justify-center border shadow-sm shrink-0',
+                    styles: Styles(
+                      backgroundColor: isDark ? Color.rgba(16, 185, 129, 0.15) : Color.rgba(16, 185, 129, 0.1),
+                      color: Color(colorScheme.primary),
+                      raw: {'border-color': isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)'},
+                    ),
+                    [
+                      const AppIcon(AppIcons.customer),
+                    ],
+                  ),
+                  div([
+                    h3(
+                      classes: 'text-base font-extrabold leading-tight',
+                      styles: Styles(color: Color(colorScheme.textHeading)),
+                      [
+                        Component.text(title ?? 'User Details'),
+                      ],
+                    ),
+                    span(
+                      classes: 'text-[11px] font-medium block',
+                      styles: Styles(color: Color(colorScheme.textMuted)),
+                      [
+                        Component.text('Platform Management'),
+                      ],
+                    ),
+                  ]),
                 ]),
                 button(
                   type: ButtonType.button,
                   classes:
-                      'p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer border-none bg-transparent',
+                      'w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer border-none bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800',
+                  styles: Styles(color: Color(colorScheme.textMuted)),
                   events: {
                     'click': (e) {
                       context.hideSidePanel();
                     },
                   },
-                  [Component.text('✕')],
+                  [
+                    span(classes: 'text-sm font-bold', [Component.text('✕')]),
+                  ],
                 ),
               ],
             ),
-            content,
+            div(classes: 'p-6 space-y-6 flex-1 overflow-y-auto animate-panel-content-in', [
+              content,
+            ]),
           ],
         ),
       ],
@@ -209,6 +348,62 @@ class App extends StatelessComponent {
           },
           [Component.text('✕')],
         ),
+      ],
+    );
+  }
+}
+
+class _PlaceholderPage extends StatelessComponent {
+  final String title;
+  final String description;
+
+  const _PlaceholderPage({required this.title, required this.description});
+
+  @override
+  Component build(BuildContext context) {
+    final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
+
+    return div(
+      classes: 'p-6 md:p-10 rounded-2xl border shadow-sm mt-6 transition-colors',
+      styles: Styles(
+        backgroundColor: Color(colorScheme.surface),
+        raw: {'border-color': colorScheme.border},
+      ),
+      [
+        div(classes: 'flex flex-col items-center justify-center text-center py-12 space-y-4', [
+          div(
+            classes:
+                'w-14 h-14 rounded-2xl flex items-center justify-center text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/40 shadow-sm mb-2',
+            [
+              const AppIcon(AppIcons.logo),
+            ],
+          ),
+          h2(
+            classes: 'text-2xl font-bold tracking-tight',
+            styles: Styles(color: Color(colorScheme.textHeading)),
+            [
+              Component.text(title),
+            ],
+          ),
+          p(
+            classes: 'text-sm max-w-md leading-relaxed',
+            styles: Styles(color: Color(colorScheme.textSecondary)),
+            [
+              Component.text(description),
+            ],
+          ),
+          div(
+            classes: 'pt-2',
+            [
+              span(
+                classes: 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
+                [
+                  Component.text('Module Active'),
+                ],
+              ),
+            ],
+          ),
+        ]),
       ],
     );
   }

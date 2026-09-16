@@ -37,12 +37,14 @@ class FlushbarConfig {
 class UIState {
   final ThemeMode themeMode;
   final Component? sidePanel;
+  final String? sidePanelTitle;
   final bool isSidePanelOpen;
   final FlushbarConfig? flushbar;
 
   const UIState({
     this.themeMode = ThemeMode.light,
     this.sidePanel,
+    this.sidePanelTitle,
     this.isSidePanelOpen = false,
     this.flushbar,
   });
@@ -63,6 +65,7 @@ class UIState {
   UIState copyWith({
     ThemeMode? themeMode,
     Component? sidePanel,
+    String? sidePanelTitle,
     bool? isSidePanelOpen,
     FlushbarConfig? flushbar,
     bool clearSidePanel = false,
@@ -71,6 +74,7 @@ class UIState {
     return UIState(
       themeMode: themeMode ?? this.themeMode,
       sidePanel: clearSidePanel ? null : (sidePanel ?? this.sidePanel),
+      sidePanelTitle: clearSidePanel ? null : (sidePanelTitle ?? this.sidePanelTitle),
       isSidePanelOpen: isSidePanelOpen ?? (clearSidePanel ? false : this.isSidePanelOpen),
       flushbar: clearFlushbar ? null : (flushbar ?? this.flushbar),
     );
@@ -111,9 +115,10 @@ class UIStateNotifier extends Notifier<UIState> {
     state = state.copyWith(themeMode: newMode);
   }
 
-  void showSidePanel(Component component) {
+  void showSidePanel(Component component, {String? title}) {
     state = state.copyWith(
       sidePanel: component,
+      sidePanelTitle: title,
       isSidePanelOpen: true,
     );
   }
@@ -150,8 +155,8 @@ extension BuildContextUIExtensions on BuildContext {
   UIState get uiState => read(uiStateProvider);
   ColorScheme get colorScheme => watch(uiStateProvider.select((state) => state.colorScheme));
 
-  void showSidePanel(Component component) {
-    read(uiStateProvider.notifier).showSidePanel(component);
+  void showSidePanel(Component component, {String? title}) {
+    read(uiStateProvider.notifier).showSidePanel(component, title: title);
   }
 
   void hideSidePanel() {

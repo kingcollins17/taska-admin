@@ -26,11 +26,13 @@ class BaseApiResponse<T> {
 @JsonSerializable(genericArgumentFactories: true, explicitToJson: true, fieldRename: FieldRename.snake)
 class PaginatedData<T> {
   final List<T>? items;
+  final int? total;
   final int? page;
   final int? perPage;
 
   const PaginatedData({
     this.items,
+    this.total,
     this.page,
     this.perPage,
   });

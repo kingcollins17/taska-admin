@@ -4,7 +4,6 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
-import '../components/platform_user_detail_side_panel.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
@@ -12,15 +11,15 @@ import '../core/providers/admin_user_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
-class UsersPage extends StatelessComponent {
-  const UsersPage({super.key});
+class InterviewsPage extends StatelessComponent {
+  const InterviewsPage({super.key});
 
   @override
   Component build(BuildContext context) {
     return div(classes: 'flex-1 space-y-6 relative', [
       const _Header(),
       const _Dashboard(),
-      const _UsersTable(),
+      const _InterviewsTable(),
     ]);
   }
 }
@@ -38,17 +37,12 @@ class _Header extends StatelessComponent {
 
     return div(classes: 'flex flex-col sm:flex-row sm:items-center justify-between gap-4', [
       div([
-        // h2(
-        //   classes: 'text-xl sm:text-2xl font-extrabold tracking-tight',
-        //   styles: Styles(color: Color(colorScheme.textHeading)),
-        //   [Component.text('User Management')],
-        // ),
         p(
           classes: 'text-xs sm:text-sm mt-1 font-medium transition-colors',
           styles: Styles(color: Color(colorScheme.textSecondary)),
           [
             Component.text(
-              'Manage registered platform users, roles, active states, and account details.',
+              'Schedule provider interviews, review meeting details, and manage vetting results.',
             ),
           ],
         ),
@@ -67,39 +61,39 @@ class _Dashboard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final usersAsync = context.watch(adminUsersProvider(const GetUsersParams(page: 1)));
+    final interviewsAsync = context.watch(adminInterviewsProvider(const GetInterviewsParams(page: 1)));
 
-    return usersAsync.when(
+    return interviewsAsync.when(
       data: (paginatedData) {
         final items = paginatedData?.items ?? [];
         final total = paginatedData?.total ?? items.length;
-        final activeCount = items.where((user) => user.isActive == true).length;
-        final customerCount = items.where((user) => user.type == 'CUSTOMER').length;
-        final providerCount = items.where((user) => user.type == 'PROVIDER').length;
+        final passedCount = items.where((interview) => interview.status == 'PASSED').length;
+        final scheduledCount = items.where((interview) => interview.status == 'SCHEDULED' || interview.status == 'RESCHEDULED').length;
+        final failedCount = items.where((interview) => interview.status == 'FAILED' || interview.status == 'CANCELLED').length;
 
         return div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', [
           _MetricCard(
-            title: 'Total Users',
+            title: 'Total Interviews',
             count: '$total',
-            icon: AppIcons.customersGroup,
+            icon: AppIcons.calendar,
             colorScheme: colorScheme,
           ),
           _MetricCard(
-            title: 'Active Accounts',
-            count: '$activeCount',
-            icon: AppIcons.customer,
+            title: 'Passed Interviews',
+            count: '$passedCount',
+            icon: AppIcons.checkCircle,
             colorScheme: colorScheme,
           ),
           _MetricCard(
-            title: 'Customers',
-            count: '$customerCount',
-            icon: AppIcons.ordersDoc,
+            title: 'Scheduled',
+            count: '$scheduledCount',
+            icon: AppIcons.documents,
             colorScheme: colorScheme,
           ),
           _MetricCard(
-            title: 'Providers',
-            count: '$providerCount',
-            icon: AppIcons.salesTag,
+            title: 'Failed / Cancelled',
+            count: '$failedCount',
+            icon: AppIcons.disputes,
             colorScheme: colorScheme,
           ),
         ]);
@@ -173,17 +167,17 @@ class _MetricCard extends StatelessComponent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Self-contained Component: _UsersTable
+// Self-contained Component: _InterviewsTable
 // ─────────────────────────────────────────────────────────────
 
-class _UsersTable extends StatefulComponent {
-  const _UsersTable();
+class _InterviewsTable extends StatefulComponent {
+  const _InterviewsTable();
 
   @override
-  State<_UsersTable> createState() => _UsersTableState();
+  State<_InterviewsTable> createState() => _InterviewsTableState();
 }
 
-class _UsersTableState extends State<_UsersTable> {
+class _InterviewsTableState extends State<_InterviewsTable> {
   String searchQuery = '';
   String _searchInputValue = '';
   Timer? _searchDebounceTimer;
@@ -222,29 +216,21 @@ class _UsersTableState extends State<_UsersTable> {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final usersAsync = context.watch(
-      adminUsersProvider(
-        GetUsersParams(
+    final interviewsAsync = context.watch(
+      adminInterviewsProvider(
+        GetInterviewsParams(
           search: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
+          status: selectedStatus == 'All' ? null : selectedStatus,
           page: currentPage,
         ),
       ),
     );
 
-    return usersAsync.when(
+    return interviewsAsync.when(
       data: (paginatedData) {
         final items = paginatedData?.items ?? [];
         final total = paginatedData?.total ?? items.length;
         final perPage = paginatedData?.perPage ?? 20;
-
-        final filteredUsers = items.where((userItem) {
-          if (selectedStatus == 'All') return true;
-          if (selectedStatus == 'Active') return userItem.isActive == true;
-          if (selectedStatus == 'Inactive') return userItem.isActive == false;
-          if (selectedStatus == 'CUSTOMER') return userItem.type == 'CUSTOMER';
-          if (selectedStatus == 'PROVIDER') return userItem.type == 'PROVIDER';
-          return true;
-        }).toList();
 
         return div(
           classes: 'border rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 transition-all',
@@ -259,7 +245,7 @@ class _UsersTableState extends State<_UsersTable> {
                 h3(
                   classes: 'text-base font-bold tracking-tight',
                   styles: Styles(color: Color(colorScheme.textHeading)),
-                  [Component.text('Registered Users')],
+                  [Component.text('Provider Interviews')],
                 ),
                 span(
                   classes: 'text-xs font-semibold px-2.5 py-0.5 rounded-full',
@@ -269,7 +255,7 @@ class _UsersTableState extends State<_UsersTable> {
                     raw: {'border-color': colorScheme.borderInput},
                   ),
                   [
-                    Component.text('${filteredUsers.length} of $total'),
+                    Component.text('${items.length} of $total'),
                   ],
                 ),
               ]),
@@ -292,7 +278,7 @@ class _UsersTableState extends State<_UsersTable> {
                       color: Color(colorScheme.textPrimary),
                       raw: {'border-color': colorScheme.borderInput},
                     ),
-                    attributes: {'placeholder': 'Search users by email...'},
+                    attributes: {'placeholder': 'Search by notes, meeting link, user...'},
                     onInput: _onSearchInput,
                   ),
                 ]),
@@ -316,6 +302,24 @@ class _UsersTableState extends State<_UsersTable> {
                     span([Component.text('Filter')]),
                   ],
                 ),
+
+                // Schedule Interview Primary Button
+                button(
+                  onClick: () {
+                    context.showFlushbar(
+                      title: 'Schedule Interview',
+                      message: 'Opening interview scheduling workspace...',
+                      type: FlushbarType.info,
+                    );
+                  },
+                  classes:
+                      'active:scale-[0.98] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer border-none',
+                  styles: Styles(backgroundColor: Color(colorScheme.primary)),
+                  [
+                    const AppIcon(AppIcons.calendar),
+                    span([Component.text('Schedule Interview')]),
+                  ],
+                ),
               ]),
             ]),
 
@@ -324,11 +328,14 @@ class _UsersTableState extends State<_UsersTable> {
               _FilterBar(
                 colorScheme: colorScheme,
                 selectedStatus: selectedStatus,
-                onSelectStatus: (status) => setState(() => selectedStatus = status),
+                onSelectStatus: (status) => setState(() {
+                  selectedStatus = status;
+                  currentPage = 1;
+                }),
               ),
 
-            // Users Data Table Content
-            if (filteredUsers.isEmpty)
+            // Interviews Data Table Content
+            if (items.isEmpty)
               _EmptyState(colorScheme: colorScheme, onResetFilters: _resetFilters)
             else
               div(
@@ -345,13 +352,13 @@ class _UsersTableState extends State<_UsersTable> {
                       ),
                       [
                         tr([
-                          th(classes: 'p-3.5 pl-4', [Component.text('User ID')]),
-                          th(classes: 'p-3.5', [Component.text('User Details')]),
-                          th(classes: 'p-3.5', [Component.text('Phone')]),
-                          th(classes: 'p-3.5', [Component.text('Role / Type')]),
+                          th(classes: 'p-3.5 pl-4', [Component.text('Interview ID')]),
+                          th(classes: 'p-3.5', [Component.text('User ID')]),
+                          th(classes: 'p-3.5', [Component.text('Admin ID')]),
+                          th(classes: 'p-3.5', [Component.text('Scheduled At')]),
                           th(classes: 'p-3.5 text-center', [Component.text('Status')]),
-                          th(classes: 'p-3.5', [Component.text('Created At')]),
-                          th(classes: 'p-3.5 pr-4 text-center', [Component.text('Actions')]),
+                          th(classes: 'p-3.5', [Component.text('Notes')]),
+                          th(classes: 'p-3.5 pr-4 text-center', [Component.text('Meeting Link')]),
                         ]),
                       ],
                     ),
@@ -362,65 +369,52 @@ class _UsersTableState extends State<_UsersTable> {
                         raw: {'border-color': colorScheme.border},
                       ),
                       [
-                        for (final user in filteredUsers)
+                        for (final item in items)
                           tr(classes: 'hover:opacity-90 transition-colors', [
                             td(
                               classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatId(user.id))],
+                              [Component.text(_formatId(item.id))],
                             ),
-                            td(classes: 'p-3.5', [
-                              div(classes: 'flex items-center space-x-3', [
-                                img(
-                                  src:
-                                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(user.fullname ?? user.email ?? 'User')}&background=0D9488&color=fff',
-                                  classes: 'w-8 h-8 rounded-full object-cover border shrink-0',
-                                  styles: Styles(raw: {'border-color': colorScheme.border}),
-                                  alt: user.fullname ?? 'User',
-                                ),
-                                div([
-                                  div(
-                                    classes: 'font-bold text-xs',
-                                    styles: Styles(color: Color(colorScheme.textHeading)),
-                                    [Component.text(user.fullname ?? 'N/A')],
-                                  ),
-                                  div(
-                                    classes: 'text-[11px]',
-                                    styles: Styles(color: Color(colorScheme.textMuted)),
-                                    [Component.text(user.email ?? 'No email')],
-                                  ),
-                                ]),
-                              ]),
-                            ]),
                             td(
-                              classes: 'p-3.5 font-medium text-xs',
+                              classes: 'p-3.5 font-mono text-xs font-semibold',
+                              styles: Styles(color: Color(colorScheme.textPrimary)),
+                              [Component.text(_formatId(item.userId))],
+                            ),
+                            td(
+                              classes: 'p-3.5 font-mono text-xs font-semibold',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
-                              [Component.text(user.phoneNumber ?? 'N/A')],
-                            ),
-                            td(
-                              classes: 'p-3.5 font-bold text-[11px]',
-                              styles: Styles(color: Color(colorScheme.primary)),
-                              [Component.text(user.type ?? 'CUSTOMER')],
-                            ),
-                            td(
-                              classes: 'p-3.5 text-center',
-                              [_UserBadgePill(status: user.isActive == true ? 'Active' : 'Inactive', colorScheme: colorScheme)],
+                              [Component.text(_formatId(item.adminId))],
                             ),
                             td(
                               classes: 'p-3.5 text-xs font-medium',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDate(user.createdAt))],
+                              [Component.text(_formatDate(item.scheduledAt))],
+                            ),
+                            td(
+                              classes: 'p-3.5 text-center',
+                              [_InterviewBadgePill(status: item.status ?? 'UNKNOWN', colorScheme: colorScheme)],
+                            ),
+                            td(
+                              classes: 'p-3.5 text-xs max-w-xs truncate font-medium',
+                              styles: Styles(color: Color(colorScheme.textSecondary)),
+                              [Component.text(item.notes ?? 'N/A')],
                             ),
                             td(classes: 'p-3.5 pr-4 text-center', [
-                              button(
-                                onClick: () {
-                                  PlatformUserDetailSidePanel.show(context, user);
-                                },
-                                classes:
-                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all',
-                                styles: Styles(backgroundColor: Color(colorScheme.primary)),
-                                [Component.text('View Detail')],
-                              ),
+                              if (item.meetingLink != null && item.meetingLink!.isNotEmpty)
+                                a(
+                                  href: item.meetingLink!,
+                                  target: Target.blank,
+                                  classes:
+                                      'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all inline-block',
+                                  styles: Styles(backgroundColor: Color(colorScheme.primary)),
+                                  [Component.text('Join Meeting')],
+                                )
+                              else
+                                span(
+                                  classes: 'text-[11px] font-medium text-slate-400',
+                                  [Component.text('No Link')],
+                                ),
                             ]),
                           ]),
                       ],
@@ -477,7 +471,7 @@ class _FilterBar extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    final options = ['All', 'Active', 'Inactive', 'CUSTOMER', 'PROVIDER'];
+    final options = ['All', 'SCHEDULED', 'COMPLETED', 'PASSED', 'FAILED', 'CANCELLED', 'RESCHEDULED'];
 
     return div(
       classes: 'p-3.5 rounded-xl border flex flex-wrap items-center gap-2 text-xs font-semibold',
@@ -536,11 +530,11 @@ class _StatusChip extends StatelessComponent {
   }
 }
 
-class _UserBadgePill extends StatelessComponent {
+class _InterviewBadgePill extends StatelessComponent {
   final String status;
   final ColorScheme colorScheme;
 
-  const _UserBadgePill({
+  const _InterviewBadgePill({
     required this.status,
     required this.colorScheme,
   });
@@ -553,11 +547,15 @@ class _UserBadgePill extends StatelessComponent {
     String text = 'text-slate-700 dark:text-slate-300';
     String border = 'border-slate-200 dark:border-slate-700';
 
-    if (status == 'Active') {
+    if (status == 'PASSED' || status == 'COMPLETED') {
       bg = 'bg-emerald-50 dark:bg-emerald-950/60';
       text = 'text-emerald-600 dark:text-emerald-400';
       border = 'border-emerald-200/50 dark:border-emerald-800/50';
-    } else if (status == 'Inactive') {
+    } else if (status == 'SCHEDULED' || status == 'RESCHEDULED') {
+      bg = 'bg-amber-50 dark:bg-amber-950/60';
+      text = 'text-amber-600 dark:text-amber-400';
+      border = 'border-amber-200/50 dark:border-amber-800/50';
+    } else if (status == 'FAILED' || status == 'CANCELLED') {
       bg = 'bg-rose-50 dark:bg-rose-950/60';
       text = 'text-rose-600 dark:text-rose-400';
       border = 'border-rose-200/50 dark:border-rose-800/50';
@@ -584,7 +582,7 @@ class _EmptyState extends StatelessComponent {
       p(
         classes: 'text-sm font-semibold',
         styles: Styles(color: Color(colorScheme.textSecondary)),
-        [Component.text('No matching platform users found')],
+        [Component.text('No matching interviews found')],
       ),
       button(
         onClick: onResetFilters,
@@ -700,7 +698,7 @@ class _ErrorState extends StatelessComponent {
         raw: {'border-color': colorScheme.border},
       ),
       [
-        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Users')]),
+        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Interviews')]),
         p(classes: 'text-xs text-slate-400 max-w-md mx-auto', [Component.text(errorMsg)]),
         button(
           onClick: onRetry,
@@ -714,7 +712,7 @@ class _ErrorState extends StatelessComponent {
 }
 
 String _formatId(String? id) {
-  if (id == null || id.isEmpty) return '#USR-000';
+  if (id == null || id.isEmpty) return '#INT-000';
   if (id.length <= 8) return '#$id';
   return '#${id.substring(0, 8)}...';
 }

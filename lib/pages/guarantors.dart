@@ -4,7 +4,7 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
-import '../components/platform_user_detail_side_panel.dart';
+import '../components/guarantor_detail_side_panel.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
@@ -12,15 +12,15 @@ import '../core/providers/admin_user_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
-class UsersPage extends StatelessComponent {
-  const UsersPage({super.key});
+class GuarantorsPage extends StatelessComponent {
+  const GuarantorsPage({super.key});
 
   @override
   Component build(BuildContext context) {
     return div(classes: 'flex-1 space-y-6 relative', [
       const _Header(),
       const _Dashboard(),
-      const _UsersTable(),
+      const _GuarantorsTable(),
     ]);
   }
 }
@@ -38,17 +38,12 @@ class _Header extends StatelessComponent {
 
     return div(classes: 'flex flex-col sm:flex-row sm:items-center justify-between gap-4', [
       div([
-        // h2(
-        //   classes: 'text-xl sm:text-2xl font-extrabold tracking-tight',
-        //   styles: Styles(color: Color(colorScheme.textHeading)),
-        //   [Component.text('User Management')],
-        // ),
         p(
           classes: 'text-xs sm:text-sm mt-1 font-medium transition-colors',
           styles: Styles(color: Color(colorScheme.textSecondary)),
           [
             Component.text(
-              'Manage registered platform users, roles, active states, and account details.',
+              'Review submitted references, verify guarantors, and monitor referee contact information.',
             ),
           ],
         ),
@@ -67,39 +62,39 @@ class _Dashboard extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final usersAsync = context.watch(adminUsersProvider(const GetUsersParams(page: 1)));
+    final guarantorsAsync = context.watch(adminGuarantorsProvider(const GetGuarantorsParams(page: 1)));
 
-    return usersAsync.when(
+    return guarantorsAsync.when(
       data: (paginatedData) {
         final items = paginatedData?.items ?? [];
         final total = paginatedData?.total ?? items.length;
-        final activeCount = items.where((user) => user.isActive == true).length;
-        final customerCount = items.where((user) => user.type == 'CUSTOMER').length;
-        final providerCount = items.where((user) => user.type == 'PROVIDER').length;
+        final passedCount = items.where((g) => g.status == 'PASSED').length;
+        final pendingCount = items.where((g) => g.status == 'PENDING' || g.status == 'UNDER_REVIEW').length;
+        final failedCount = items.where((g) => g.status == 'FAILED').length;
 
         return div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', [
           _MetricCard(
-            title: 'Total Users',
+            title: 'Total References',
             count: '$total',
-            icon: AppIcons.customersGroup,
+            icon: AppIcons.guarantors,
             colorScheme: colorScheme,
           ),
           _MetricCard(
-            title: 'Active Accounts',
-            count: '$activeCount',
-            icon: AppIcons.customer,
+            title: 'Verified / Passed',
+            count: '$passedCount',
+            icon: AppIcons.checkCircle,
             colorScheme: colorScheme,
           ),
           _MetricCard(
-            title: 'Customers',
-            count: '$customerCount',
-            icon: AppIcons.ordersDoc,
+            title: 'Pending Review',
+            count: '$pendingCount',
+            icon: AppIcons.documents,
             colorScheme: colorScheme,
           ),
           _MetricCard(
-            title: 'Providers',
-            count: '$providerCount',
-            icon: AppIcons.salesTag,
+            title: 'Failed',
+            count: '$failedCount',
+            icon: AppIcons.disputes,
             colorScheme: colorScheme,
           ),
         ]);
@@ -173,17 +168,17 @@ class _MetricCard extends StatelessComponent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Self-contained Component: _UsersTable
+// Self-contained Component: _GuarantorsTable
 // ─────────────────────────────────────────────────────────────
 
-class _UsersTable extends StatefulComponent {
-  const _UsersTable();
+class _GuarantorsTable extends StatefulComponent {
+  const _GuarantorsTable();
 
   @override
-  State<_UsersTable> createState() => _UsersTableState();
+  State<_GuarantorsTable> createState() => _GuarantorsTableState();
 }
 
-class _UsersTableState extends State<_UsersTable> {
+class _GuarantorsTableState extends State<_GuarantorsTable> {
   String searchQuery = '';
   String _searchInputValue = '';
   Timer? _searchDebounceTimer;
@@ -222,29 +217,21 @@ class _UsersTableState extends State<_UsersTable> {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final usersAsync = context.watch(
-      adminUsersProvider(
-        GetUsersParams(
+    final guarantorsAsync = context.watch(
+      adminGuarantorsProvider(
+        GetGuarantorsParams(
           search: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
+          status: selectedStatus == 'All' ? null : selectedStatus,
           page: currentPage,
         ),
       ),
     );
 
-    return usersAsync.when(
+    return guarantorsAsync.when(
       data: (paginatedData) {
         final items = paginatedData?.items ?? [];
         final total = paginatedData?.total ?? items.length;
         final perPage = paginatedData?.perPage ?? 20;
-
-        final filteredUsers = items.where((userItem) {
-          if (selectedStatus == 'All') return true;
-          if (selectedStatus == 'Active') return userItem.isActive == true;
-          if (selectedStatus == 'Inactive') return userItem.isActive == false;
-          if (selectedStatus == 'CUSTOMER') return userItem.type == 'CUSTOMER';
-          if (selectedStatus == 'PROVIDER') return userItem.type == 'PROVIDER';
-          return true;
-        }).toList();
 
         return div(
           classes: 'border rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 transition-all',
@@ -259,7 +246,7 @@ class _UsersTableState extends State<_UsersTable> {
                 h3(
                   classes: 'text-base font-bold tracking-tight',
                   styles: Styles(color: Color(colorScheme.textHeading)),
-                  [Component.text('Registered Users')],
+                  [Component.text('Submitted References/Guarantors')],
                 ),
                 span(
                   classes: 'text-xs font-semibold px-2.5 py-0.5 rounded-full',
@@ -269,7 +256,7 @@ class _UsersTableState extends State<_UsersTable> {
                     raw: {'border-color': colorScheme.borderInput},
                   ),
                   [
-                    Component.text('${filteredUsers.length} of $total'),
+                    Component.text('${items.length} of $total'),
                   ],
                 ),
               ]),
@@ -292,7 +279,7 @@ class _UsersTableState extends State<_UsersTable> {
                       color: Color(colorScheme.textPrimary),
                       raw: {'border-color': colorScheme.borderInput},
                     ),
-                    attributes: {'placeholder': 'Search users by email...'},
+                    attributes: {'placeholder': 'Search by name, phone, relationship...'},
                     onInput: _onSearchInput,
                   ),
                 ]),
@@ -324,11 +311,14 @@ class _UsersTableState extends State<_UsersTable> {
               _FilterBar(
                 colorScheme: colorScheme,
                 selectedStatus: selectedStatus,
-                onSelectStatus: (status) => setState(() => selectedStatus = status),
+                onSelectStatus: (status) => setState(() {
+                  selectedStatus = status;
+                  currentPage = 1;
+                }),
               ),
 
-            // Users Data Table Content
-            if (filteredUsers.isEmpty)
+            // Guarantors Data Table Content
+            if (items.isEmpty)
               _EmptyState(colorScheme: colorScheme, onResetFilters: _resetFilters)
             else
               div(
@@ -345,11 +335,13 @@ class _UsersTableState extends State<_UsersTable> {
                       ),
                       [
                         tr([
-                          th(classes: 'p-3.5 pl-4', [Component.text('User ID')]),
-                          th(classes: 'p-3.5', [Component.text('User Details')]),
+                          th(classes: 'p-3.5 pl-4', [Component.text('Guarantor ID')]),
+                          th(classes: 'p-3.5', [Component.text('Provider ID')]),
+                          th(classes: 'p-3.5', [Component.text('Guarantor Name')]),
+                          th(classes: 'p-3.5', [Component.text('Relationship')]),
                           th(classes: 'p-3.5', [Component.text('Phone')]),
-                          th(classes: 'p-3.5', [Component.text('Role / Type')]),
                           th(classes: 'p-3.5 text-center', [Component.text('Status')]),
+                          th(classes: 'p-3.5', [Component.text('Verified At')]),
                           th(classes: 'p-3.5', [Component.text('Created At')]),
                           th(classes: 'p-3.5 pr-4 text-center', [Component.text('Actions')]),
                         ]),
@@ -362,62 +354,60 @@ class _UsersTableState extends State<_UsersTable> {
                         raw: {'border-color': colorScheme.border},
                       ),
                       [
-                        for (final user in filteredUsers)
+                        for (final g in items)
                           tr(classes: 'hover:opacity-90 transition-colors', [
                             td(
                               classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatId(user.id))],
+                              [Component.text(_formatId(g.id))],
+                            ),
+                            td(
+                              classes: 'p-3.5 font-mono text-xs font-semibold',
+                              styles: Styles(color: Color(colorScheme.textPrimary)),
+                              [Component.text(_formatId(g.providerId))],
+                            ),
+                            td(
+                              classes: 'p-3.5 font-bold text-xs',
+                              styles: Styles(color: Color(colorScheme.textHeading)),
+                              [Component.text(g.guarantorName ?? 'N/A')],
                             ),
                             td(classes: 'p-3.5', [
-                              div(classes: 'flex items-center space-x-3', [
-                                img(
-                                  src:
-                                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(user.fullname ?? user.email ?? 'User')}&background=0D9488&color=fff',
-                                  classes: 'w-8 h-8 rounded-full object-cover border shrink-0',
-                                  styles: Styles(raw: {'border-color': colorScheme.border}),
-                                  alt: user.fullname ?? 'User',
+                              span(
+                                classes: 'px-2.5 py-1 rounded-md text-[11px] font-semibold border',
+                                styles: Styles(
+                                  backgroundColor: Color(colorScheme.inputBg),
+                                  color: Color(colorScheme.textSecondary),
+                                  raw: {'border-color': colorScheme.borderInput},
                                 ),
-                                div([
-                                  div(
-                                    classes: 'font-bold text-xs',
-                                    styles: Styles(color: Color(colorScheme.textHeading)),
-                                    [Component.text(user.fullname ?? 'N/A')],
-                                  ),
-                                  div(
-                                    classes: 'text-[11px]',
-                                    styles: Styles(color: Color(colorScheme.textMuted)),
-                                    [Component.text(user.email ?? 'No email')],
-                                  ),
-                                ]),
-                              ]),
+                                [Component.text(g.relationship ?? 'N/A')],
+                              ),
                             ]),
                             td(
                               classes: 'p-3.5 font-medium text-xs',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
-                              [Component.text(user.phoneNumber ?? 'N/A')],
-                            ),
-                            td(
-                              classes: 'p-3.5 font-bold text-[11px]',
-                              styles: Styles(color: Color(colorScheme.primary)),
-                              [Component.text(user.type ?? 'CUSTOMER')],
+                              [Component.text(g.guarantorPhone ?? 'N/A')],
                             ),
                             td(
                               classes: 'p-3.5 text-center',
-                              [_UserBadgePill(status: user.isActive == true ? 'Active' : 'Inactive', colorScheme: colorScheme)],
+                              [_GuarantorBadgePill(status: g.status ?? 'UNKNOWN', colorScheme: colorScheme)],
                             ),
                             td(
                               classes: 'p-3.5 text-xs font-medium',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDate(user.createdAt))],
+                              [Component.text(_formatDate(g.verifiedAt))],
+                            ),
+                            td(
+                              classes: 'p-3.5 text-xs font-medium',
+                              styles: Styles(color: Color(colorScheme.textMuted)),
+                              [Component.text(_formatDate(g.createdAt))],
                             ),
                             td(classes: 'p-3.5 pr-4 text-center', [
                               button(
                                 onClick: () {
-                                  PlatformUserDetailSidePanel.show(context, user);
+                                  GuarantorDetailSidePanel.show(context, g);
                                 },
                                 classes:
-                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all',
+                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all active:scale-95 border-none',
                                 styles: Styles(backgroundColor: Color(colorScheme.primary)),
                                 [Component.text('View Detail')],
                               ),
@@ -477,7 +467,7 @@ class _FilterBar extends StatelessComponent {
 
   @override
   Component build(BuildContext context) {
-    final options = ['All', 'Active', 'Inactive', 'CUSTOMER', 'PROVIDER'];
+    final options = ['All', 'PENDING', 'PASSED', 'FAILED', 'UNDER_REVIEW'];
 
     return div(
       classes: 'p-3.5 rounded-xl border flex flex-wrap items-center gap-2 text-xs font-semibold',
@@ -536,11 +526,11 @@ class _StatusChip extends StatelessComponent {
   }
 }
 
-class _UserBadgePill extends StatelessComponent {
+class _GuarantorBadgePill extends StatelessComponent {
   final String status;
   final ColorScheme colorScheme;
 
-  const _UserBadgePill({
+  const _GuarantorBadgePill({
     required this.status,
     required this.colorScheme,
   });
@@ -553,11 +543,15 @@ class _UserBadgePill extends StatelessComponent {
     String text = 'text-slate-700 dark:text-slate-300';
     String border = 'border-slate-200 dark:border-slate-700';
 
-    if (status == 'Active') {
+    if (status == 'PASSED' || status == 'VERIFIED') {
       bg = 'bg-emerald-50 dark:bg-emerald-950/60';
       text = 'text-emerald-600 dark:text-emerald-400';
       border = 'border-emerald-200/50 dark:border-emerald-800/50';
-    } else if (status == 'Inactive') {
+    } else if (status == 'PENDING' || status == 'UNDER_REVIEW') {
+      bg = 'bg-amber-50 dark:bg-amber-950/60';
+      text = 'text-amber-600 dark:text-amber-400';
+      border = 'border-amber-200/50 dark:border-amber-800/50';
+    } else if (status == 'FAILED') {
       bg = 'bg-rose-50 dark:bg-rose-950/60';
       text = 'text-rose-600 dark:text-rose-400';
       border = 'border-rose-200/50 dark:border-rose-800/50';
@@ -584,7 +578,7 @@ class _EmptyState extends StatelessComponent {
       p(
         classes: 'text-sm font-semibold',
         styles: Styles(color: Color(colorScheme.textSecondary)),
-        [Component.text('No matching platform users found')],
+        [Component.text('No matching guarantors found')],
       ),
       button(
         onClick: onResetFilters,
@@ -700,7 +694,7 @@ class _ErrorState extends StatelessComponent {
         raw: {'border-color': colorScheme.border},
       ),
       [
-        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Users')]),
+        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Guarantors')]),
         p(classes: 'text-xs text-slate-400 max-w-md mx-auto', [Component.text(errorMsg)]),
         button(
           onClick: onRetry,
@@ -714,7 +708,7 @@ class _ErrorState extends StatelessComponent {
 }
 
 String _formatId(String? id) {
-  if (id == null || id.isEmpty) return '#USR-000';
+  if (id == null || id.isEmpty) return '#GUA-000';
   if (id.length <= 8) return '#$id';
   return '#${id.substring(0, 8)}...';
 }

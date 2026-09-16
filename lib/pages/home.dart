@@ -413,7 +413,7 @@ class _UserDistributionCard extends StatelessComponent {
               span(
                 classes: 'text-xs font-semibold',
                 styles: Styles(color: Color(colorScheme.textMuted)),
-                [Component.text('Service Providers')],
+                [Component.text('Providers')],
               ),
               span(
                 classes: 'text-2xl font-bold',
@@ -436,7 +436,7 @@ class _UserDistributionCard extends StatelessComponent {
               span(
                 classes: 'text-xs font-semibold',
                 styles: Styles(color: Color(colorScheme.textSecondary)),
-                [Component.text('Total Platform Accounts')],
+                [Component.text('Total Users')],
               ),
             ]),
             span(

@@ -58,7 +58,8 @@ final dioProvider = Provider<Dio>((ref) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      validateStatus: (status) => status != null && status < 500,
+      // validateStatus: (status) => status != null && status < 500,
+      validateStatus: (_) => true,
     ),
   );
 
