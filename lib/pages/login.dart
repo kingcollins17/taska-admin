@@ -85,12 +85,45 @@ class _LoginFormState extends State<_LoginForm> {
   void handleSubmit(BuildContext context) {
     if (isLoading) return;
 
-    if (isSignUp && !agreeTerms) {
-      context.showFlushbar(
-        message: 'Please agree to the Terms & Privacy policy to continue',
-        type: FlushbarType.error,
-      );
-      return;
+    if (isSignUp) {
+      if (fullName.trim().isEmpty || password.trim().isEmpty || inviteToken.trim().isEmpty) {
+        context.showFlushbar(
+          message: 'Please enter all required details to continue',
+          type: FlushbarType.warning,
+        );
+        return;
+      }
+
+      if (!agreeTerms) {
+        context.showFlushbar(
+          message: 'Please agree to the Terms & Privacy policy to continue',
+          type: FlushbarType.error,
+        );
+        return;
+      }
+    } else {
+      final trimmedEmail = email.trim();
+      final trimmedPassword = password.trim();
+
+      if (trimmedEmail.isEmpty && trimmedPassword.isEmpty) {
+        context.showFlushbar(
+          message: 'Please enter your email and password to continue',
+          type: FlushbarType.warning,
+        );
+        return;
+      } else if (trimmedEmail.isEmpty) {
+        context.showFlushbar(
+          message: 'Please enter your email address to continue',
+          type: FlushbarType.warning,
+        );
+        return;
+      } else if (trimmedPassword.isEmpty) {
+        context.showFlushbar(
+          message: 'Please enter your password to continue',
+          type: FlushbarType.warning,
+        );
+        return;
+      }
     }
 
     setState(() {
@@ -578,17 +611,11 @@ class _TextField extends StatelessComponent {
           ),
           value: value,
           disabled: disabled,
+          onInput: onInput,
           attributes: {
             'placeholder': placeholder,
             'autocomplete': autocomplete,
             'aria-label': placeholder,
-          },
-          events: {
-            if (onInput != null)
-              'input': (event) {
-                final targetVal = (event.target as dynamic)?.value?.toString() ?? '';
-                onInput!(targetVal);
-              },
           },
         ),
         if (trailing != null) trailing!,
@@ -630,12 +657,7 @@ class _CheckboxRow extends StatelessComponent {
           attributes: {
             'id': id,
           },
-          events: {
-            'change': (event) {
-              final isChecked = (event.target as dynamic)?.checked == true;
-              onChanged(isChecked);
-            },
-          },
+          onChange: onChanged,
         ),
         label(
           attributes: {'for': id},

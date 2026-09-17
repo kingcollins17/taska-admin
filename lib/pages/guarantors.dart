@@ -64,7 +64,7 @@ class _Dashboard extends StatelessComponent {
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
     final statsAsync = context.watch(adminGuarantorStatsProvider);
-
+ 
     return statsAsync.when(
       data: (stats) {
         final total = stats?.totalGuarantors ?? 0;

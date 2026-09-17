@@ -10,11 +10,14 @@ import 'core/designs/components/app_icon.dart';
 import 'core/providers/ui_state_provider.dart';
 import 'core/services/local_storage.dart';
 import 'pages/about.dart';
+import 'pages/administrators.dart';
+import 'pages/audit_logs.dart';
 import 'pages/guarantors.dart';
 import 'pages/home.dart';
 import 'pages/interviews.dart';
 import 'pages/kyc.dart';
 import 'pages/login.dart';
+import 'pages/tasks.dart';
 import 'pages/users.dart';
 
 @client
@@ -139,10 +142,7 @@ class App extends StatelessComponent {
               Route(
                 path: '/tasks',
                 title: 'Taska Admin - Tasks',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'Tasks Management',
-                  description: 'Monitor active tasks, job assignments, completion metrics, and status logs.',
-                ),
+                builder: (context, state) => const TasksPage(),
               ),
               Route(
                 path: '/disputes',
@@ -171,18 +171,12 @@ class App extends StatelessComponent {
               Route(
                 path: '/administrators',
                 title: 'Taska Admin - Administrators',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'Administrators & Roles',
-                  description: 'Manage admin accounts, access permissions, team roles, and security policies.',
-                ),
+                builder: (context, state) => const AdministratorsPage(),
               ),
               Route(
                 path: '/audit-logs',
                 title: 'Taska Admin - Audit Logs',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'Audit & System Logs',
-                  description: 'Inspect system events, admin action logs, API access history, and security audits.',
-                ),
+                builder: (context, state) => const AuditLogsPage(),
               ),
               Route(
                 path: '/settings',
@@ -282,7 +276,7 @@ class App extends StatelessComponent {
 
     return div(
       classes:
-          'fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-md animate-backdrop-in',
+          'fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm animate-backdrop-in',
       events: {
         'click': (event) {
           context.hideSidePanel();

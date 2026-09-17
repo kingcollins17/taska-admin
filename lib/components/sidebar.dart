@@ -6,7 +6,9 @@ import 'package:jaspr_router/jaspr_router.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
+import '../core/providers/network_providers.dart';
 import '../core/providers/ui_state_provider.dart';
+import '../core/services/local_storage.dart';
 
 class Sidebar extends StatelessComponent {
   final String activePath;
@@ -122,16 +124,39 @@ class Sidebar extends StatelessComponent {
                 ],
               ),
 
-              // System Section
-              _buildSection(
-                context,
-                colorScheme,
-                title: 'SYSTEM',
-                items: [
-                  _NavItemData('Settings', '/settings', AppIcons.setting,
-                      isActive: activePath == '/settings' || activePath == '/system/settings'),
-                ],
-              ),
+              // Logout Button
+              div(classes: 'shrink-0', [
+                div(
+                  classes: 'text-[10px] font-bold tracking-wider uppercase mb-1.5 px-3',
+                  styles: Styles(color: Color(colorScheme.placeholder)),
+                  [
+                    Component.text('ACCOUNT'),
+                  ],
+                ),
+                nav(
+                  classes: 'space-y-0.5',
+                  [
+                    button(
+                      type: ButtonType.button,
+                      onClick: () {
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+                        context.invalidate(isAuthenticatedProvider);
+                        Router.of(context).push('/login');
+                      },
+                      classes:
+                          'w-full rounded-xl px-3 py-2 flex items-center space-x-3 transition-colors text-xs md:text-sm hover:opacity-80 cursor-pointer border-none bg-transparent',
+                      styles: Styles(color: Color(colorScheme.textSecondary)),
+                      [
+                        div(classes: 'flex items-center space-x-3', [
+                          const AppIcon(AppIcons.logout),
+                          span(classes: 'font-medium', [Component.text('Logout')]),
+                        ]),
+                      ],
+                    ),
+                  ],
+                ),
+              ]),
             ],
           ),
         ]),

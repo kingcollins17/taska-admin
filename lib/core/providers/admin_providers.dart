@@ -15,6 +15,7 @@ import '../utils/error_handler.dart';
 final adminAuthProvider = AsyncNotifierProvider<AdminAuthNotifier, AdminUser?>(AdminAuthNotifier.new);
 
 final adminDashboardOverviewProvider = FutureProvider<AdminDashboardOverview?>((ref) async {
+  ref.watch(isAuthenticatedProvider);
   final client = ref.watch(adminUserClientProvider);
   final response = await client.getDashboardOverview();
   return response.data;
@@ -22,6 +23,7 @@ final adminDashboardOverviewProvider = FutureProvider<AdminDashboardOverview?>((
 
 final adminUserProvider = FutureProvider<AdminUser>((ref) async {
   try {
+    ref.watch(isAuthenticatedProvider);
     final client = ref.read(adminAuthClientProvider);
     final response = await client.getMe();
     if (response.data != null) {
