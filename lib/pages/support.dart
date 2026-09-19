@@ -3,26 +3,24 @@ import 'dart:async';
 import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+import 'package:jaspr_router/jaspr_router.dart';
 
-import '../components/interview_detail_side_panel.dart';
-import '../components/schedule_interview_dialog.dart';
+import '../components/support_case_detail_side_panel.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
-import '../core/providers/admin_user_providers.dart';
-import '../core/providers/stats_providers.dart';
+import '../core/providers/admin_support_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
-class InterviewsPage extends StatelessComponent {
-  const InterviewsPage({super.key});
+class SupportPage extends StatelessComponent {
+  const SupportPage({super.key});
 
   @override
   Component build(BuildContext context) {
     return div(classes: 'flex-1 space-y-6 relative', [
       const _Header(),
-      const _Dashboard(),
-      const _InterviewsTable(),
+      const _SupportTable(),
     ]);
   }
 }
@@ -45,148 +43,59 @@ class _Header extends StatelessComponent {
           styles: Styles(color: Color(colorScheme.textSecondary)),
           [
             Component.text(
-              'Schedule provider interviews, review meeting details, and manage vetting results.',
+              'Manage customer and provider support tickets, inquiries, SLA timelines, and issue resolution.',
             ),
           ],
         ),
       ]),
+      button(
+        type: ButtonType.button,
+        onClick: () {
+          Router.of(context).push('/support/workspace');
+        },
+        classes: 'px-4 py-2 rounded-xl text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center space-x-2 active:scale-95 border-none shrink-0 self-start sm:self-auto',
+        styles: Styles(backgroundColor: Color(colorScheme.primary)),
+        [
+          div(classes: 'w-4 h-4', [const AppIcon(AppIcons.externalLink)]),
+          span([Component.text('Workspace View')]),
+        ],
+      ),
     ]);
   }
 }
 
 // ─────────────────────────────────────────────────────────────
-// Self-contained Component: _Dashboard
+// Support Cases Table Component
 // ─────────────────────────────────────────────────────────────
 
-class _Dashboard extends StatelessComponent {
-  const _Dashboard();
+class _SupportTable extends StatefulComponent {
+  const _SupportTable();
 
   @override
-  Component build(BuildContext context) {
-    final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final statsAsync = context.watch(adminInterviewStatsProvider);
-
-    return statsAsync.when(
-      data: (stats) {
-        final total = stats?.totalInterviews ?? 0;
-        final passedCount = stats?.totalPassed ?? 0;
-        final scheduledCount = (stats?.totalScheduled ?? 0) + (stats?.totalRescheduled ?? 0);
-        final failedCount = (stats?.totalFailed ?? 0) + (stats?.totalCancelled ?? 0);
-
-        return div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4', [
-          _MetricCard(
-            title: 'Total Interviews',
-            count: '$total',
-            icon: AppIcons.calendar,
-            colorScheme: colorScheme,
-          ),
-          _MetricCard(
-            title: 'Passed Interviews',
-            count: '$passedCount',
-            icon: AppIcons.checkCircle,
-            colorScheme: colorScheme,
-          ),
-          _MetricCard(
-            title: 'Scheduled',
-            count: '$scheduledCount',
-            icon: AppIcons.documents,
-            colorScheme: colorScheme,
-          ),
-          _MetricCard(
-            title: 'Failed / Cancelled',
-            count: '$failedCount',
-            icon: AppIcons.disputes,
-            colorScheme: colorScheme,
-          ),
-        ]);
-      },
-      loading: () => div(classes: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse', [
-        for (var i = 0; i < 4; i++)
-          div(
-            classes: 'h-24 rounded-2xl border p-5',
-            styles: Styles(
-              backgroundColor: colorScheme.isDark ? Color.rgba(31, 45, 39, 0.8) : Color.rgba(226, 232, 240, 0.8),
-              raw: {'border-color': colorScheme.border},
-            ),
-            [],
-          ),
-      ]),
-      error: (_, __) => div([]),
-    );
-  }
+  State<_SupportTable> createState() => _SupportTableState();
 }
 
-class _MetricCard extends StatelessComponent {
-  final String title;
-  final String count;
-  final AppIcons icon;
-  final ColorScheme colorScheme;
-
-  const _MetricCard({
-    required this.title,
-    required this.count,
-    required this.icon,
-    required this.colorScheme,
-  });
-
-  @override
-  Component build(BuildContext context) {
-    return div(
-      classes:
-          'border rounded-2xl p-5 shadow-sm flex items-start justify-between relative overflow-hidden transition-all',
-      styles: Styles(
-        backgroundColor: Color(colorScheme.surface),
-        raw: {'border-color': colorScheme.border},
-      ),
-      [
-        div(classes: 'space-y-2', [
-          span(
-            classes: 'text-xs font-semibold uppercase tracking-wider',
-            styles: Styles(color: Color(colorScheme.textMuted)),
-            [Component.text(title)],
-          ),
-          div(classes: 'flex items-baseline space-x-2', [
-            span(
-              classes: 'text-2xl sm:text-3xl font-extrabold tracking-tight',
-              styles: Styles(color: Color(colorScheme.textHeading)),
-              [Component.text(count)],
-            ),
-          ]),
-        ]),
-        div(
-          classes: 'w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm',
-          styles: Styles(
-            backgroundColor: Color(colorScheme.inputBg),
-            color: Color(colorScheme.primary),
-          ),
-          [
-            AppIcon(icon),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Self-contained Component: _InterviewsTable
-// ─────────────────────────────────────────────────────────────
-
-class _InterviewsTable extends StatefulComponent {
-  const _InterviewsTable();
-
-  @override
-  State<_InterviewsTable> createState() => _InterviewsTableState();
-}
-
-class _InterviewsTableState extends State<_InterviewsTable> {
+class _SupportTableState extends State<_SupportTable> {
   String searchQuery = '';
   String _searchInputValue = '';
   Timer? _searchDebounceTimer;
 
-  String selectedStatus = 'All';
+  // Multi-select status filter state
+  Set<String> selectedStatuses = {};
+  String selectedPriority = 'All';
   bool isFilterOpen = false;
   int currentPage = 1;
+
+  final List<String> allStatusOptions = [
+    'OPEN',
+    'IN_PROGRESS',
+    'WAITING_FOR_USER',
+    'WAITING_FOR_PROVIDER',
+    'WAITING_FOR_INTERNAL',
+    'RESOLVED',
+    'CLOSED',
+    'AUTO_CLOSED',
+  ];
 
   @override
   void dispose() {
@@ -197,11 +106,22 @@ class _InterviewsTableState extends State<_InterviewsTable> {
   void _onSearchInput(dynamic value) {
     _searchInputValue = value.toString();
     _searchDebounceTimer?.cancel();
-    _searchDebounceTimer = Timer(const Duration(seconds: 2), () {
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       setState(() {
         searchQuery = _searchInputValue;
         currentPage = 1;
       });
+    });
+  }
+
+  void _toggleStatusFilter(String status) {
+    setState(() {
+      if (selectedStatuses.contains(status)) {
+        selectedStatuses.remove(status);
+      } else {
+        selectedStatuses.add(status);
+      }
+      currentPage = 1;
     });
   }
 
@@ -210,7 +130,8 @@ class _InterviewsTableState extends State<_InterviewsTable> {
     _searchInputValue = '';
     setState(() {
       searchQuery = '';
-      selectedStatus = 'All';
+      selectedStatuses.clear();
+      selectedPriority = 'All';
       currentPage = 1;
     });
   }
@@ -218,17 +139,19 @@ class _InterviewsTableState extends State<_InterviewsTable> {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final interviewsAsync = context.watch(
-      adminInterviewsProvider(
-        GetInterviewsParams(
+    final casesAsync = context.watch(
+      adminSupportCasesProvider(
+        GetAdminSupportCasesParams(
           search: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
-          status: selectedStatus == 'All' ? null : selectedStatus,
+          status: selectedStatuses.isEmpty ? null : selectedStatuses.toList(),
+          priority: selectedPriority == 'All' ? null : selectedPriority,
           page: currentPage,
+          perPage: 20,
         ),
       ),
     );
 
-    return interviewsAsync.when(
+    return casesAsync.when(
       data: (paginatedData) {
         final items = paginatedData?.items ?? [];
         final total = paginatedData?.total ?? items.length;
@@ -247,7 +170,7 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                 h3(
                   classes: 'text-base font-bold tracking-tight',
                   styles: Styles(color: Color(colorScheme.textHeading)),
-                  [Component.text('Provider Interviews')],
+                  [Component.text('Support Cases & Tickets')],
                 ),
                 span(
                   classes: 'text-xs font-semibold px-2.5 py-0.5 rounded-full',
@@ -263,7 +186,7 @@ class _InterviewsTableState extends State<_InterviewsTable> {
               ]),
 
               div(classes: 'flex flex-wrap items-center gap-3', [
-                // Search Input Pill with 2s Timer Debounce
+                // Search Input Pill
                 div(classes: 'relative w-full sm:w-64', [
                   div(
                     classes: 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none',
@@ -280,7 +203,7 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                       color: Color(colorScheme.textPrimary),
                       raw: {'border-color': colorScheme.borderInput},
                     ),
-                    attributes: {'placeholder': 'Search by notes, meeting link, user...'},
+                    attributes: {'placeholder': 'Search by subject, case #, user...'},
                     onInput: _onSearchInput,
                   ),
                 ]),
@@ -294,45 +217,48 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                   },
                   classes:
                       'text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 transition-colors cursor-pointer border',
-                  styles: Styles(
-                    backgroundColor: Color(colorScheme.inputBg),
-                    color: Color(colorScheme.textPrimary),
-                    raw: {'border-color': colorScheme.borderInput},
-                  ),
+                  styles: isFilterOpen || selectedStatuses.isNotEmpty || selectedPriority != 'All'
+                      ? Styles(
+                          backgroundColor: Color(colorScheme.primary),
+                          color: Color('#FFFFFF'),
+                          raw: {'border-color': colorScheme.primary},
+                        )
+                      : Styles(
+                          backgroundColor: Color(colorScheme.inputBg),
+                          color: Color(colorScheme.textPrimary),
+                          raw: {'border-color': colorScheme.borderInput},
+                        ),
                   [
                     const AppIcon(AppIcons.filter),
-                    span([Component.text('Filter')]),
+                    span([Component.text(selectedStatuses.isNotEmpty ? 'Filters (${selectedStatuses.length})' : 'Filter')]),
                   ],
                 ),
 
-                // Schedule Interview Primary Button
-                button(
-                  onClick: () {
-                    ScheduleInterviewDialog.show(context);
-                  },
-                  classes:
-                      'active:scale-[0.98] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer border-none',
-                  styles: Styles(backgroundColor: Color(colorScheme.primary)),
-                  [
-                    const AppIcon(AppIcons.calendar),
-                    span([Component.text('Schedule Interview')]),
-                  ],
-                ),
+                if (selectedStatuses.isNotEmpty || selectedPriority != 'All' || searchQuery.isNotEmpty)
+                  button(
+                    onClick: _resetFilters,
+                    classes: 'text-xs font-bold text-rose-500 hover:underline cursor-pointer border-none bg-transparent',
+                    [Component.text('Reset')],
+                  ),
               ]),
             ]),
 
-            // Expandable Status Filter Bar
+            // Expandable Multi-Select Status & Priority Filter Bar
             if (isFilterOpen)
-              _FilterBar(
+              _MultiSelectFilterBar(
                 colorScheme: colorScheme,
-                selectedStatus: selectedStatus,
-                onSelectStatus: (status) => setState(() {
-                  selectedStatus = status;
+                allStatuses: allStatusOptions,
+                selectedStatuses: selectedStatuses,
+                selectedPriority: selectedPriority,
+                onToggleStatus: _toggleStatusFilter,
+                onSelectPriority: (pri) => setState(() {
+                  selectedPriority = pri;
                   currentPage = 1;
                 }),
+                onClearAll: _resetFilters,
               ),
 
-            // Interviews Data Table Content
+            // Support Cases Data Table
             if (items.isEmpty)
               _EmptyState(colorScheme: colorScheme, onResetFilters: _resetFilters)
             else
@@ -350,13 +276,14 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                       ),
                       [
                         tr([
-                          th(classes: 'p-3.5 pl-4', [Component.text('Interview ID')]),
-                          th(classes: 'p-3.5', [Component.text('User ID')]),
-                          th(classes: 'p-3.5', [Component.text('Admin ID')]),
-                          th(classes: 'p-3.5', [Component.text('Scheduled At')]),
+                          th(classes: 'p-3.5 pl-4', [Component.text('Case #')]),
+                          th(classes: 'p-3.5', [Component.text('Subject & Summary')]),
+                          th(classes: 'p-3.5', [Component.text('Initiator')]),
+                          th(classes: 'p-3.5 text-center', [Component.text('Type')]),
+                          th(classes: 'p-3.5 text-center', [Component.text('Priority')]),
                           th(classes: 'p-3.5 text-center', [Component.text('Status')]),
-                          th(classes: 'p-3.5', [Component.text('Notes')]),
-                          th(classes: 'p-3.5 pr-4 text-center', [Component.text('Meeting Link')]),
+                          th(classes: 'p-3.5', [Component.text('Created At')]),
+                          th(classes: 'p-3.5 pr-4 text-center', [Component.text('Action')]),
                         ]),
                       ],
                     ),
@@ -372,35 +299,75 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                             td(
                               classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatId(item.id))],
+                              [Component.text(item.caseNumber ?? _formatId(item.id))],
                             ),
                             td(
-                              classes: 'p-3.5 font-mono text-xs font-semibold',
-                              styles: Styles(color: Color(colorScheme.textPrimary)),
-                              [Component.text(_formatId(item.userId))],
+                              classes: 'p-3.5 max-w-xs',
+                              [
+                                div(
+                                  classes: 'font-bold text-xs truncate',
+                                  styles: Styles(color: Color(colorScheme.textHeading)),
+                                  [Component.text(item.subject ?? 'No Subject')],
+                                ),
+                                if (item.description != null && item.description!.isNotEmpty)
+                                  div(
+                                    classes: 'text-[11px] truncate',
+                                    styles: Styles(color: Color(colorScheme.textMuted)),
+                                    [Component.text(item.description!)],
+                                  ),
+                              ],
                             ),
                             td(
-                              classes: 'p-3.5 font-mono text-xs font-semibold',
-                              styles: Styles(color: Color(colorScheme.textSecondary)),
-                              [Component.text(_formatId(item.adminId))],
+                              classes: 'p-3.5',
+                              [
+                                if (item.initiator != null) ...[
+                                  div(
+                                    classes: 'font-semibold text-xs truncate',
+                                    styles: Styles(color: Color(colorScheme.textPrimary)),
+                                    [Component.text('${item.initiator?.firstName ?? ''} ${item.initiator?.lastName ?? ''}'.trim().isEmpty ? 'Initiator' : '${item.initiator?.firstName ?? ''} ${item.initiator?.lastName ?? ''}')],
+                                  ),
+                                  if (item.initiator?.email != null)
+                                    div(
+                                      classes: 'text-[10.5px] font-mono truncate',
+                                      styles: Styles(color: Color(colorScheme.textMuted)),
+                                      [Component.text(item.initiator!.email!)],
+                                    ),
+                                ] else
+                                  span(
+                                    classes: 'text-slate-400 font-mono text-[11px]',
+                                    [Component.text(_formatId(item.customerId ?? item.initiatedBy))],
+                                  ),
+                              ],
                             ),
+                            td(classes: 'p-3.5 text-center', [
+                              span(
+                                classes: 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border',
+                                styles: Styles(
+                                  backgroundColor: Color(colorScheme.inputBg),
+                                  color: Color(colorScheme.textSecondary),
+                                  raw: {'border-color': colorScheme.borderInput},
+                                ),
+                                [Component.text(item.type ?? 'GENERAL')],
+                              ),
+                            ]),
+                            td(classes: 'p-3.5 text-center', [
+                              _PriorityPill(priority: item.priority ?? 'NORMAL', colorScheme: colorScheme),
+                            ]),
+                            td(classes: 'p-3.5 text-center', [
+                              _StatusPill(status: item.status ?? 'OPEN', colorScheme: colorScheme),
+                            ]),
                             td(
                               classes: 'p-3.5 text-xs font-medium',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDate(item.scheduledAt))],
-                            ),
-                            td(
-                              classes: 'p-3.5 text-center',
-                              [_InterviewBadgePill(status: item.status ?? 'UNKNOWN', colorScheme: colorScheme)],
-                            ),
-                            td(
-                              classes: 'p-3.5 text-xs max-w-xs truncate font-medium',
-                              styles: Styles(color: Color(colorScheme.textSecondary)),
-                              [Component.text(item.notes ?? 'N/A')],
+                              [Component.text(_formatDate(item.createdAt))],
                             ),
                             td(classes: 'p-3.5 pr-4 text-center', [
                               button(
-                                onClick: () => InterviewDetailSidePanel.show(context, item),
+                                onClick: () {
+                                  if (item.id != null) {
+                                    SupportCaseDetailSidePanel.show(context, item.id!, caseItem: item);
+                                  }
+                                },
                                 classes:
                                     'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer border-none',
                                 styles: Styles(backgroundColor: Color(colorScheme.primary)),
@@ -446,115 +413,211 @@ class _InterviewsTableState extends State<_InterviewsTable> {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Supporting Sub-components (Classes)
+// Multi-Select Status & Priority Filter Bar
 // ─────────────────────────────────────────────────────────────
 
-class _FilterBar extends StatelessComponent {
+class _MultiSelectFilterBar extends StatelessComponent {
   final ColorScheme colorScheme;
-  final String selectedStatus;
-  final void Function(String status) onSelectStatus;
+  final List<String> allStatuses;
+  final Set<String> selectedStatuses;
+  final String selectedPriority;
+  final void Function(String status) onToggleStatus;
+  final void Function(String priority) onSelectPriority;
+  final void Function() onClearAll;
 
-  const _FilterBar({
+  const _MultiSelectFilterBar({
     required this.colorScheme,
-    required this.selectedStatus,
-    required this.onSelectStatus,
+    required this.allStatuses,
+    required this.selectedStatuses,
+    required this.selectedPriority,
+    required this.onToggleStatus,
+    required this.onSelectPriority,
+    required this.onClearAll,
   });
 
   @override
   Component build(BuildContext context) {
-    final options = ['All', 'SCHEDULED', 'COMPLETED', 'PASSED', 'FAILED', 'CANCELLED', 'RESCHEDULED'];
+    final priorityOptions = ['All', 'LOW', 'NORMAL', 'HIGH', 'URGENT'];
 
     return div(
-      classes: 'p-3.5 rounded-xl border flex flex-wrap items-center gap-2 text-xs font-semibold',
+      classes: 'p-4 rounded-xl border space-y-3.5 transition-all shadow-2xs',
       styles: Styles(
         backgroundColor: Color(colorScheme.inputBg),
         raw: {'border-color': colorScheme.borderInput},
       ),
       [
-        span(
-          classes: 'mr-1 text-[11px] uppercase tracking-wider font-bold',
-          styles: Styles(color: Color(colorScheme.textMuted)),
-          [Component.text('Filter Status:')],
-        ),
-        for (final opt in options)
-          _StatusChip(
-            statusLabel: opt,
-            isSelected: selectedStatus == opt,
-            colorScheme: colorScheme,
-            onSelect: () => onSelectStatus(opt),
+        // Status Multi-select Chips
+        div(classes: 'space-y-1.5', [
+          div(classes: 'flex items-center justify-between', [
+            span(
+              classes: 'text-[11px] font-black uppercase tracking-wider block',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [Component.text('Filter Statuses (Multi-Select):')],
+            ),
+            if (selectedStatuses.isNotEmpty)
+              button(
+                type: ButtonType.button,
+                onClick: onClearAll,
+                classes: 'text-[10.5px] font-bold text-rose-500 hover:underline cursor-pointer border-none bg-transparent',
+                [Component.text('Clear Statuses')],
+              ),
+          ]),
+
+          div(classes: 'flex flex-wrap items-center gap-1.5', [
+            for (final st in allStatuses)
+              _MultiSelectChip(
+                label: st,
+                isSelected: selectedStatuses.contains(st),
+                colorScheme: colorScheme,
+                onToggle: () => onToggleStatus(st),
+              ),
+          ]),
+        ]),
+
+        // Priority Filter Chips
+        div(classes: 'space-y-1.5 pt-2 border-t', styles: Styles(raw: {'border-color': colorScheme.borderInput}), [
+          span(
+            classes: 'text-[11px] font-black uppercase tracking-wider block',
+            styles: Styles(color: Color(colorScheme.textMuted)),
+            [Component.text('Filter Priority:')],
           ),
+          div(classes: 'flex flex-wrap items-center gap-1.5', [
+            for (final pri in priorityOptions)
+              button(
+                type: ButtonType.button,
+                onClick: () => onSelectPriority(pri),
+                classes: 'px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border',
+                styles: selectedPriority == pri
+                    ? Styles(
+                        backgroundColor: Color(colorScheme.primary),
+                        color: Color('#FFFFFF'),
+                        raw: {'border-color': colorScheme.primary},
+                      )
+                    : Styles(
+                        backgroundColor: Color(colorScheme.surface),
+                        color: Color(colorScheme.textSecondary),
+                        raw: {'border-color': colorScheme.borderInput},
+                      ),
+                [Component.text(pri)],
+              ),
+          ]),
+        ]),
       ],
     );
   }
 }
 
-class _StatusChip extends StatelessComponent {
-  final String statusLabel;
+class _MultiSelectChip extends StatelessComponent {
+  final String label;
   final bool isSelected;
   final ColorScheme colorScheme;
-  final void Function() onSelect;
+  final void Function() onToggle;
 
-  const _StatusChip({
-    required this.statusLabel,
+  const _MultiSelectChip({
+    required this.label,
     required this.isSelected,
     required this.colorScheme,
-    required this.onSelect,
+    required this.onToggle,
   });
 
   @override
   Component build(BuildContext context) {
     return button(
-      onClick: onSelect,
-      classes: 'px-3 py-1 rounded-lg transition-all cursor-pointer text-xs font-bold',
+      type: ButtonType.button,
+      onClick: onToggle,
+      classes:
+          'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 border active:scale-95',
       styles: isSelected
           ? Styles(
               backgroundColor: Color(colorScheme.primary),
               color: Color('#FFFFFF'),
+              raw: {'border-color': colorScheme.primary},
             )
           : Styles(
               backgroundColor: Color(colorScheme.surface),
               color: Color(colorScheme.textSecondary),
               raw: {'border-color': colorScheme.borderInput},
             ),
-      [Component.text(statusLabel)],
+      [
+        span(classes: 'text-[10px]', [Component.text(isSelected ? '✓' : '+')]),
+        span([Component.text(label)]),
+      ],
     );
   }
 }
 
-class _InterviewBadgePill extends StatelessComponent {
+class _StatusPill extends StatelessComponent {
   final String status;
   final ColorScheme colorScheme;
 
-  const _InterviewBadgePill({
-    required this.status,
-    required this.colorScheme,
-  });
+  const _StatusPill({required this.status, required this.colorScheme});
 
   @override
   Component build(BuildContext context) {
-    String badgeClasses =
-        'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none tracking-tight border';
     String bg = 'bg-slate-100 dark:bg-slate-800';
     String text = 'text-slate-700 dark:text-slate-300';
     String border = 'border-slate-200 dark:border-slate-700';
 
-    if (status == 'PASSED' || status == 'COMPLETED') {
-      bg = 'bg-emerald-50 dark:bg-emerald-950/60';
-      text = 'text-emerald-600 dark:text-emerald-400';
-      border = 'border-emerald-200/50 dark:border-emerald-800/50';
-    } else if (status == 'SCHEDULED' || status == 'RESCHEDULED') {
-      bg = 'bg-amber-50 dark:bg-amber-950/60';
-      text = 'text-amber-600 dark:text-amber-400';
-      border = 'border-amber-200/50 dark:border-amber-800/50';
-    } else if (status == 'FAILED' || status == 'CANCELLED') {
-      bg = 'bg-rose-50 dark:bg-rose-950/60';
-      text = 'text-rose-600 dark:text-rose-400';
-      border = 'border-rose-200/50 dark:border-rose-800/50';
+    switch (status.toUpperCase()) {
+      case 'OPEN':
+      case 'IN_PROGRESS':
+        bg = 'bg-amber-50 dark:bg-amber-950/60';
+        text = 'text-amber-600 dark:text-amber-400';
+        border = 'border-amber-200/50 dark:border-amber-800/50';
+        break;
+      case 'RESOLVED':
+      case 'CLOSED':
+      case 'AUTO_CLOSED':
+        bg = 'bg-emerald-50 dark:bg-emerald-950/60';
+        text = 'text-emerald-600 dark:text-emerald-400';
+        border = 'border-emerald-200/50 dark:border-emerald-800/50';
+        break;
+      case 'WAITING_FOR_USER':
+      case 'WAITING_FOR_PROVIDER':
+      case 'WAITING_FOR_INTERNAL':
+        bg = 'bg-sky-50 dark:bg-sky-950/60';
+        text = 'text-sky-600 dark:text-sky-400';
+        border = 'border-sky-200/50 dark:border-sky-800/50';
+        break;
     }
 
-    return span(classes: '$badgeClasses $bg $text $border', [
-      Component.text(status),
-    ]);
+    return span(
+      classes: 'px-2.5 py-1 rounded-full text-[10.5px] font-bold inline-block leading-none tracking-tight border $bg $text $border',
+      [Component.text(status)],
+    );
+  }
+}
+
+class _PriorityPill extends StatelessComponent {
+  final String priority;
+  final ColorScheme colorScheme;
+
+  const _PriorityPill({required this.priority, required this.colorScheme});
+
+  @override
+  Component build(BuildContext context) {
+    String bg = 'bg-slate-100 dark:bg-slate-800';
+    String text = 'text-slate-700 dark:text-slate-300';
+    String border = 'border-slate-200 dark:border-slate-700';
+
+    switch (priority.toUpperCase()) {
+      case 'HIGH':
+      case 'URGENT':
+        bg = 'bg-rose-50 dark:bg-rose-950/60';
+        text = 'text-rose-600 dark:text-rose-400';
+        border = 'border-rose-200/50 dark:border-rose-800/50';
+        break;
+      case 'NORMAL':
+        bg = 'bg-sky-50 dark:bg-sky-950/60';
+        text = 'text-sky-600 dark:text-sky-400';
+        border = 'border-sky-200/50 dark:border-sky-800/50';
+        break;
+    }
+
+    return span(
+      classes: 'px-2 py-1 rounded-full text-[10.5px] font-bold inline-block leading-none tracking-tight border $bg $text $border',
+      [Component.text(priority)],
+    );
   }
 }
 
@@ -573,11 +636,11 @@ class _EmptyState extends StatelessComponent {
       p(
         classes: 'text-sm font-semibold',
         styles: Styles(color: Color(colorScheme.textSecondary)),
-        [Component.text('No matching interviews found')],
+        [Component.text('No matching support cases found')],
       ),
       button(
         onClick: onResetFilters,
-        classes: 'text-xs font-bold hover:underline cursor-pointer',
+        classes: 'text-xs font-bold hover:underline cursor-pointer border-none bg-transparent',
         styles: Styles(color: Color(colorScheme.primary)),
         [Component.text('Reset filters')],
       ),
@@ -689,11 +752,11 @@ class _ErrorState extends StatelessComponent {
         raw: {'border-color': colorScheme.border},
       ),
       [
-        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Interviews')]),
+        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Support Cases')]),
         p(classes: 'text-xs text-slate-400 max-w-md mx-auto', [Component.text(errorMsg)]),
         button(
           onClick: onRetry,
-          classes: 'px-4 py-2 text-xs font-bold text-white rounded-xl shadow-xs cursor-pointer',
+          classes: 'px-4 py-2 text-xs font-bold text-white rounded-xl shadow-xs cursor-pointer border-none',
           styles: Styles(backgroundColor: Color(colorScheme.primary)),
           [Component.text('Retry')],
         ),
@@ -703,7 +766,7 @@ class _ErrorState extends StatelessComponent {
 }
 
 String _formatId(String? id) {
-  if (id == null || id.isEmpty) return '#INT-000';
+  if (id == null || id.isEmpty) return '#SUP-000';
   if (id.length <= 8) return '#$id';
   return '#${id.substring(0, 8)}...';
 }
@@ -711,7 +774,7 @@ String _formatId(String? id) {
 String _formatDate(String? raw) {
   if (raw == null || raw.isEmpty) return 'N/A';
   try {
-    final dt = DateTime.parse(raw);
+    final dt = DateTime.parse(raw).toLocal();
     return '${dt.day}/${dt.month}/${dt.year}';
   } catch (_) {
     return raw;

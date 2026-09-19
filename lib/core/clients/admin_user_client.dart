@@ -18,6 +18,7 @@ import '../models/clients/vetting/admin_interview_item.dart';
 import '../models/clients/vetting/admin_kyc_document_item.dart';
 import '../models/clients/vetting/admin_reject_vetting_body.dart';
 import '../models/clients/vetting/admin_schedule_interview_body.dart';
+import '../models/clients/vetting/admin_update_interview_status_body.dart';
 
 part 'admin_user_client.g.dart';
 
@@ -162,5 +163,11 @@ abstract class AdminUserClient {
   @POST('/vetting/admin/interviews/schedule')
   Future<BaseApiResponse<dynamic>> scheduleInterview(
     @Body() AdminScheduleInterviewBody body,
+  );
+
+  @PUT('/vetting/admin/interviews/{interview_id}/status')
+  Future<BaseApiResponse<dynamic>> updateInterviewStatus(
+    @Path('interview_id') String interviewId,
+    @Body() AdminUpdateInterviewStatusBody body,
   );
 }

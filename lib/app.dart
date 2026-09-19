@@ -17,6 +17,8 @@ import 'pages/home.dart';
 import 'pages/interviews.dart';
 import 'pages/kyc.dart';
 import 'pages/login.dart';
+import 'pages/support.dart';
+import 'pages/support_ticket_workspace_manager.dart';
 import 'pages/tasks.dart';
 import 'pages/users.dart';
 
@@ -36,78 +38,85 @@ class App extends StatelessComponent {
       appClasses += ' dark';
     }
 
-    return div(
-      classes: appClasses,
-      styles: Styles(backgroundColor: Color(colorScheme.background)),
-      [
-        Router(
-          redirect: (context, state) {
-            final token = localStorage.getItem('accessToken');
-            final isAuthenticated = token != null && token.isNotEmpty;
-            final isLoggingIn = state.location == '/login';
+    return div(classes: appClasses, styles: Styles(backgroundColor: Color(colorScheme.background)), [
+      Router(
+        redirect: (context, state) {
+          final token = localStorage.getItem('accessToken');
+          final isAuthenticated = token != null && token.isNotEmpty;
+          final isLoggingIn = state.location == '/login';
 
-            if (!isAuthenticated && !isLoggingIn) {
-              return '/login';
-            }
-            if (isAuthenticated && isLoggingIn) {
-              return '/';
-            }
-            return null;
-          },
-          routes: [
-            Route(
-              path: '/login',
-              title: 'Taska Admin - Authentication',
-              builder: (context, state) => const LoginPage(),
-            ),
-            ShellRoute(
-              builder: (context, state, child) {
-                var activePath = state.location;
-                var title = 'Dashboard';
-                if (activePath == '/about') {
-                  title = 'About Taska';
-                } else if (activePath == '/users' || activePath == '/customers') {
-                  title = 'Users Management';
-                } else if (activePath == '/kyc') {
-                  title = 'KYC Verification';
-                } else if (activePath == '/guarantors') {
-                  title = 'Guarantors Management';
-                } else if (activePath == '/interviews') {
-                  title = 'Provider Interviews';
-                } else if (activePath == '/tasks') {
-                  title = 'Tasks Management';
-                } else if (activePath == '/disputes') {
-                  title = 'Disputes & Claims';
-                } else if (activePath == '/support' || activePath == '/help') {
-                  title = 'Support & Help Desk';
-                } else if (activePath == '/payments' || activePath == '/transactions') {
-                  title = 'Payments & Finance';
-                } else if (activePath == '/administrators') {
-                  title = 'Administrators & Roles';
-                } else if (activePath == '/audit-logs') {
-                  title = 'Audit Logs';
-                } else if (activePath == '/settings') {
-                  title = 'System Settings';
-                }
+          if (!isAuthenticated && !isLoggingIn) {
+            return '/login';
+          }
+          if (isAuthenticated && isLoggingIn) {
+            return '/';
+          }
+          return null;
+        },
+        routes: [
+          Route(
+            path: '/login',
+            title: 'Taska Admin - Authentication',
+            builder: (context, state) => const LoginPage(),
+          ),
+          Route(
+            path: '/support/workspace',
+            title: 'Taska Admin - Support Workspace',
+            builder: (context, state) => const SupportTicketWorkspaceManagerPage(),
+          ),
+          Route(
+            path: '/support-workspace',
+            title: 'Taska Admin - Support Workspace',
+            builder: (context, state) => const SupportTicketWorkspaceManagerPage(),
+          ),
+          ShellRoute(
+            builder: (context, state, child) {
+              var activePath = state.location;
+              var title = 'Dashboard';
+              if (activePath == '/about') {
+                title = 'About Taska';
+              } else if (activePath == '/users' || activePath == '/customers') {
+                title = 'Users Management';
+              } else if (activePath == '/kyc') {
+                title = 'KYC Verification';
+              } else if (activePath == '/guarantors') {
+                title = 'Guarantors Management';
+              } else if (activePath == '/interviews') {
+                title = 'Provider Interviews';
+              } else if (activePath == '/tasks') {
+                title = 'Tasks Management';
+              } else if (activePath == '/disputes') {
+                title = 'Disputes & Claims';
+              } else if (activePath == '/support' || activePath == '/help') {
+                title = 'Support & Help Desk';
+              } else if (activePath == '/payments' || activePath == '/transactions') {
+                title = 'Payments & Finance';
+              } else if (activePath == '/administrators') {
+                title = 'Administrators & Roles';
+              } else if (activePath == '/audit-logs') {
+                title = 'Audit Logs';
+              } else if (activePath == '/settings') {
+                title = 'System Settings';
+              }
 
-                return div(
-                  classes:
-                      'w-full min-h-screen flex flex-col md:flex-row transition-colors duration-200',
-                  styles: Styles(backgroundColor: Color(colorScheme.background)),
-                  [
-                    Sidebar(activePath: activePath),
-                    section(
-                      classes:
-                          'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden transition-colors duration-200',
-                      styles: Styles(backgroundColor: Color(colorScheme.background)),
-                      [
-                        TopBar(title: title),
-                        child,
-                      ],
-                    ),
-                  ],
-                );
-              },
+              return div(
+                classes: 'w-full min-h-screen flex flex-col md:flex-row transition-colors duration-200',
+                styles: Styles(backgroundColor: Color(colorScheme.background)),
+                [
+                  Sidebar(activePath: activePath),
+                  section(
+                    classes:
+                        'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden transition-colors duration-200',
+                    styles: Styles(backgroundColor: Color(colorScheme.background)),
+                    [
+                      TopBar(title: title),
+                      child,
+                    ],
+                  ),
+                ],
+              );
+            },
+            // ShellRoute children
             routes: [
               Route(
                 path: '/',
@@ -155,10 +164,7 @@ class App extends StatelessComponent {
               Route(
                 path: '/support',
                 title: 'Taska Admin - Support',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'Support Center',
-                  description: 'Manage help requests, support tickets, customer inquiries, and live chats.',
-                ),
+                builder: (context, state) => const SupportPage(),
               ),
               Route(
                 path: '/payments',
@@ -199,8 +205,7 @@ class App extends StatelessComponent {
         buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
       if (uiState.isDialogOpen && uiState.dialog != null)
         buildDialogOverlay(context, uiState.dialog!, uiState.dialogTitle),
-      if (uiState.flushbar != null)
-        buildFlushbar(context, uiState.flushbar!),
+      if (uiState.flushbar != null) buildFlushbar(context, uiState.flushbar!),
     ]);
   }
 
@@ -275,8 +280,7 @@ class App extends StatelessComponent {
     final isDark = colorScheme.isDark;
 
     return div(
-      classes:
-          'fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm animate-backdrop-in',
+      classes: 'fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-sm animate-backdrop-in',
       events: {
         'click': (event) {
           context.hideSidePanel();
@@ -306,8 +310,7 @@ class App extends StatelessComponent {
               [
                 div(classes: 'flex items-center space-x-3', [
                   div(
-                    classes:
-                        'w-9 h-9 rounded-xl flex items-center justify-center border shadow-sm shrink-0',
+                    classes: 'w-9 h-9 rounded-xl flex items-center justify-center border shadow-sm shrink-0',
                     styles: Styles(
                       backgroundColor: isDark ? Color.rgba(16, 185, 129, 0.15) : Color.rgba(16, 185, 129, 0.1),
                       color: Color(colorScheme.primary),
@@ -377,8 +380,7 @@ class App extends StatelessComponent {
         iconSymbol = '⚠';
         break;
       case FlushbarType.info:
-        typeClasses =
-            'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-slate-900/20';
+        typeClasses = 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-slate-900/20';
         iconSymbol = 'ℹ';
         break;
     }
@@ -388,8 +390,7 @@ class App extends StatelessComponent {
           'fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl transition-all duration-300 transform translate-y-0 $typeClasses',
       [
         span(
-          classes:
-              'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold',
+          classes: 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold',
           [
             Component.text(iconSymbol),
           ],
@@ -458,7 +459,8 @@ class _PlaceholderPage extends StatelessComponent {
             classes: 'pt-2',
             [
               span(
-                classes: 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
+                classes:
+                    'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
                 [
                   Component.text('Module Active'),
                 ],

@@ -93,8 +93,6 @@ class Sidebar extends StatelessComponent {
                       isActive: activePath == '/interviews' || activePath == '/operations/interviews'),
                   _NavItemData('Tasks', '/tasks', AppIcons.tasks,
                       isActive: activePath == '/tasks' || activePath == '/operations/tasks'),
-                  _NavItemData('Disputes', '/disputes', AppIcons.disputes,
-                      isActive: activePath == '/disputes' || activePath == '/operations/disputes'),
                   _NavItemData('Support', '/support', AppIcons.help,
                       isActive: activePath == '/support' || activePath == '/help'),
                 ],

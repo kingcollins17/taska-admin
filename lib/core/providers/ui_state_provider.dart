@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 import 'package:universal_web/web.dart' as web;
@@ -101,6 +103,7 @@ final uiStateProvider = NotifierProvider<UIStateNotifier, UIState>(UIStateNotifi
 
 class UIStateNotifier extends Notifier<UIState> {
   static const _themeStorageKey = 'taska_is_dark';
+  Timer? _flushbarTimer;
 
   @override
   UIState build() {
@@ -164,17 +167,23 @@ class UIStateNotifier extends Notifier<UIState> {
     FlushbarType type = FlushbarType.info,
     Duration duration = const Duration(seconds: 4),
   }) {
-    state = state.copyWith(
-      flushbar: FlushbarConfig(
-        message: message,
-        title: title,
-        type: type,
-        duration: duration,
-      ),
+    _flushbarTimer?.cancel();
+    final config = FlushbarConfig(
+      message: message,
+      title: title,
+      type: type,
+      duration: duration,
     );
+    state = state.copyWith(flushbar: config);
+    _flushbarTimer = Timer(duration, () {
+      if (state.flushbar == config) {
+        hideFlushbar();
+      }
+    });
   }
 
   void hideFlushbar() {
+    _flushbarTimer?.cancel();
     state = state.copyWith(clearFlushbar: true);
   }
 }
