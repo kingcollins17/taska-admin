@@ -212,6 +212,7 @@ class AdminSupportManagement extends AsyncNotifier<void> {
         ref.invalidate(adminSupportCaseDetailProvider(caseId));
         ref.invalidate(adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: caseId)));
         ref.invalidate(adminMyAssignedSupportCasesProvider);
+        ref.invalidate(adminSupportCasesProvider);
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to update support case';
@@ -271,6 +272,7 @@ class AdminSupportManagement extends AsyncNotifier<void> {
         ref.invalidate(adminSupportCaseDetailProvider(caseId));
         ref.invalidate(adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: caseId)));
         ref.invalidate(adminMyAssignedSupportCasesProvider);
+        ref.invalidate(adminSupportCasesProvider);
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to claim support case';
@@ -301,6 +303,7 @@ class AdminSupportManagement extends AsyncNotifier<void> {
         ref.invalidate(adminSupportCaseDetailProvider(caseId));
         ref.invalidate(adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: caseId)));
         ref.invalidate(adminMyAssignedSupportCasesProvider);
+        ref.invalidate(adminSupportCasesProvider);
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to assign support case';
@@ -389,6 +392,7 @@ class AdminSupportManagement extends AsyncNotifier<void> {
         ref.invalidate(adminSupportCaseDetailProvider(caseId));
         ref.invalidate(adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: caseId)));
         ref.invalidate(adminMyAssignedSupportCasesProvider);
+        ref.invalidate(adminSupportCasesProvider);
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to resolve support case';
@@ -418,6 +422,7 @@ class AdminSupportManagement extends AsyncNotifier<void> {
         ref.invalidate(adminSupportCaseDetailProvider(caseId));
         ref.invalidate(adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: caseId)));
         ref.invalidate(adminMyAssignedSupportCasesProvider);
+        ref.invalidate(adminSupportCasesProvider);
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to escalate support case';

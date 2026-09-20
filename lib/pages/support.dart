@@ -354,7 +354,11 @@ class _SupportTableState extends State<_SupportTable> {
                               _PriorityPill(priority: item.priority ?? 'NORMAL', colorScheme: colorScheme),
                             ]),
                             td(classes: 'p-3.5 text-center', [
-                              _StatusPill(status: item.status ?? 'OPEN', colorScheme: colorScheme),
+                              div(classes: 'flex flex-col items-center gap-1', [
+                                _StatusPill(status: item.status ?? 'OPEN', colorScheme: colorScheme),
+                                if (item.assignedAgentId != null && item.assignedAgentId!.trim().isNotEmpty)
+                                  const _AssignedBadge(),
+                              ]),
                             ]),
                             td(
                               classes: 'p-3.5 text-xs font-medium',
@@ -584,6 +588,22 @@ class _StatusPill extends StatelessComponent {
     return span(
       classes: 'px-2.5 py-1 rounded-full text-[10.5px] font-bold inline-block leading-none tracking-tight border $bg $text $border',
       [Component.text(status)],
+    );
+  }
+}
+
+class _AssignedBadge extends StatelessComponent {
+  const _AssignedBadge();
+
+  @override
+  Component build(BuildContext context) {
+    return span(
+      classes:
+          'px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 inline-flex items-center gap-1',
+      [
+        span(classes: 'w-1.5 h-1.5 rounded-full bg-indigo-500', []),
+        Component.text('Assigned'),
+      ],
     );
   }
 }

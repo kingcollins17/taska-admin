@@ -79,6 +79,7 @@ class _SupportCaseDetailSidePanelState extends State<SupportCaseDetailSidePanel>
           isSubmittingAction = false;
           errorMessage = msg;
         });
+        context.showFlushbar(message: msg, type: FlushbarType.error);
       },
     );
   }
