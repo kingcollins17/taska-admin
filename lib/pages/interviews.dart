@@ -340,7 +340,7 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                 classes: 'overflow-x-auto rounded-xl border transition-colors',
                 styles: Styles(raw: {'border-color': colorScheme.border}),
                 [
-                  table(classes: 'w-full text-left border-collapse text-xs', [
+                  table(classes: 'w-full min-w-[950px] text-left border-collapse text-xs', [
                     thead(
                       classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
                       styles: Styles(
@@ -350,13 +350,13 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                       ),
                       [
                         tr([
-                          th(classes: 'p-3.5 pl-4', [Component.text('Interview ID')]),
-                          th(classes: 'p-3.5', [Component.text('User ID')]),
-                          th(classes: 'p-3.5', [Component.text('Admin ID')]),
-                          th(classes: 'p-3.5', [Component.text('Scheduled At')]),
-                          th(classes: 'p-3.5 text-center', [Component.text('Status')]),
-                          th(classes: 'p-3.5', [Component.text('Notes')]),
-                          th(classes: 'p-3.5 pr-4 text-center', [Component.text('Meeting Link')]),
+                          th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Interview ID')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('User ID')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Admin ID')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Scheduled At')]),
+                          th(classes: 'p-3.5 text-center whitespace-nowrap', [Component.text('Status')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Notes')]),
+                          th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Meeting Link')]),
                         ]),
                       ],
                     ),
@@ -370,39 +370,39 @@ class _InterviewsTableState extends State<_InterviewsTable> {
                         for (final item in items)
                           tr(classes: 'hover:opacity-90 transition-colors', [
                             td(
-                              classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
+                              classes: 'p-3.5 pl-4 font-mono font-bold text-[11px] whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
                               [Component.text(_formatId(item.id))],
                             ),
                             td(
-                              classes: 'p-3.5 font-mono text-xs font-semibold',
+                              classes: 'p-3.5 font-mono text-xs font-semibold whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textPrimary)),
                               [Component.text(_formatId(item.userId))],
                             ),
                             td(
-                              classes: 'p-3.5 font-mono text-xs font-semibold',
+                              classes: 'p-3.5 font-mono text-xs font-semibold whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
                               [Component.text(_formatId(item.adminId))],
                             ),
                             td(
-                              classes: 'p-3.5 text-xs font-medium',
+                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
                               [Component.text(_formatDate(item.scheduledAt))],
                             ),
                             td(
-                              classes: 'p-3.5 text-center',
+                              classes: 'p-3.5 text-center whitespace-nowrap',
                               [_InterviewBadgePill(status: item.status ?? 'UNKNOWN', colorScheme: colorScheme)],
                             ),
                             td(
-                              classes: 'p-3.5 text-xs max-w-xs truncate font-medium',
+                              classes: 'p-3.5 text-xs max-w-xs truncate font-medium whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
                               [Component.text(item.notes ?? 'N/A')],
                             ),
-                            td(classes: 'p-3.5 pr-4 text-center', [
+                            td(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [
                               button(
                                 onClick: () => InterviewDetailSidePanel.show(context, item),
                                 classes:
-                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer border-none',
+                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer border-none whitespace-nowrap shrink-0',
                                 styles: Styles(backgroundColor: Color(colorScheme.primary)),
                                 [Component.text('View Details')],
                               ),
@@ -533,7 +533,7 @@ class _InterviewBadgePill extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     String badgeClasses =
-        'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none tracking-tight border';
+        'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none tracking-tight border whitespace-nowrap';
     String bg = 'bg-slate-100 dark:bg-slate-800';
     String text = 'text-slate-700 dark:text-slate-300';
     String border = 'border-slate-200 dark:border-slate-700';

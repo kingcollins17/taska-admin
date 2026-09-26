@@ -9,6 +9,8 @@ import '../components/support_case_detail_side_panel.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
+import '../core/models/clients/support/admin_support_case_item.dart';
+import '../core/providers/admin_providers.dart';
 import '../core/providers/admin_support_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
@@ -139,6 +141,9 @@ class _SupportTableState extends State<_SupportTable> {
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
+    final adminUser = context.watch(adminUserProvider).value ?? context.watch(adminAuthProvider).value;
+    final currentAdminId = adminUser?.id;
+
     final casesAsync = context.watch(
       adminSupportCasesProvider(
         GetAdminSupportCasesParams(
@@ -295,90 +300,7 @@ class _SupportTableState extends State<_SupportTable> {
                       ),
                       [
                         for (final item in items)
-                          tr(classes: 'hover:opacity-90 transition-colors', [
-                            td(
-                              classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
-                              styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(item.caseNumber ?? _formatId(item.id))],
-                            ),
-                            td(
-                              classes: 'p-3.5 max-w-xs',
-                              [
-                                div(
-                                  classes: 'font-bold text-xs truncate',
-                                  styles: Styles(color: Color(colorScheme.textHeading)),
-                                  [Component.text(item.subject ?? 'No Subject')],
-                                ),
-                                if (item.description != null && item.description!.isNotEmpty)
-                                  div(
-                                    classes: 'text-[11px] truncate',
-                                    styles: Styles(color: Color(colorScheme.textMuted)),
-                                    [Component.text(item.description!)],
-                                  ),
-                              ],
-                            ),
-                            td(
-                              classes: 'p-3.5',
-                              [
-                                if (item.initiator != null) ...[
-                                  div(
-                                    classes: 'font-semibold text-xs truncate',
-                                    styles: Styles(color: Color(colorScheme.textPrimary)),
-                                    [Component.text('${item.initiator?.firstName ?? ''} ${item.initiator?.lastName ?? ''}'.trim().isEmpty ? 'Initiator' : '${item.initiator?.firstName ?? ''} ${item.initiator?.lastName ?? ''}')],
-                                  ),
-                                  if (item.initiator?.email != null)
-                                    div(
-                                      classes: 'text-[10.5px] font-mono truncate',
-                                      styles: Styles(color: Color(colorScheme.textMuted)),
-                                      [Component.text(item.initiator!.email!)],
-                                    ),
-                                ] else
-                                  span(
-                                    classes: 'text-slate-400 font-mono text-[11px]',
-                                    [Component.text(_formatId(item.customerId ?? item.initiatedBy))],
-                                  ),
-                              ],
-                            ),
-                            td(classes: 'p-3.5 text-center', [
-                              span(
-                                classes: 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border',
-                                styles: Styles(
-                                  backgroundColor: Color(colorScheme.inputBg),
-                                  color: Color(colorScheme.textSecondary),
-                                  raw: {'border-color': colorScheme.borderInput},
-                                ),
-                                [Component.text(item.type ?? 'GENERAL')],
-                              ),
-                            ]),
-                            td(classes: 'p-3.5 text-center', [
-                              _PriorityPill(priority: item.priority ?? 'NORMAL', colorScheme: colorScheme),
-                            ]),
-                            td(classes: 'p-3.5 text-center', [
-                              div(classes: 'flex flex-col items-center gap-1', [
-                                _StatusPill(status: item.status ?? 'OPEN', colorScheme: colorScheme),
-                                if (item.assignedAgentId != null && item.assignedAgentId!.trim().isNotEmpty)
-                                  const _AssignedBadge(),
-                              ]),
-                            ]),
-                            td(
-                              classes: 'p-3.5 text-xs font-medium',
-                              styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDate(item.createdAt))],
-                            ),
-                            td(classes: 'p-3.5 pr-4 text-center', [
-                              button(
-                                onClick: () {
-                                  if (item.id != null) {
-                                    SupportCaseDetailSidePanel.show(context, item.id!, caseItem: item);
-                                  }
-                                },
-                                classes:
-                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer border-none',
-                                styles: Styles(backgroundColor: Color(colorScheme.primary)),
-                                [Component.text('View Details')],
-                              ),
-                            ]),
-                          ]),
+                          _buildRow(context, item, colorScheme, currentAdminId),
                       ],
                     ),
                   ]),
@@ -412,6 +334,152 @@ class _SupportTableState extends State<_SupportTable> {
         errorMsg: err.toString(),
         onRetry: () => setState(() {}),
       ),
+    );
+  }
+
+  Component _buildRow(
+    BuildContext context,
+    AdminSupportCaseItem item,
+    ColorScheme colorScheme,
+    String? currentAdminId,
+  ) {
+    final isAssigned = item.assignedAgentId != null && item.assignedAgentId!.trim().isNotEmpty;
+    final isOpen = (item.status ?? 'OPEN').toUpperCase() == 'OPEN';
+    final isAssignedToMe = isAssigned && currentAdminId != null && item.assignedAgentId == currentAdminId;
+    final isAssignedToOther = isAssigned && !isAssignedToMe;
+    final canOpenWorkspace = isAssigned && !isOpen;
+
+    String rowClasses =
+        'transition-all cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 border-l-4 border-l-transparent';
+    if (isAssignedToMe) {
+      rowClasses =
+          'transition-all cursor-pointer bg-emerald-500/10 dark:bg-emerald-500/15 hover:bg-emerald-500/20 border-l-4 border-l-[#00A870] outline outline-1 outline-[#00A870]/40 -outline-offset-1';
+    } else if (isAssignedToOther) {
+      rowClasses =
+          'transition-all cursor-pointer bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 border-l-4 border-l-indigo-400 dark:border-l-indigo-500 outline outline-1 outline-indigo-300/50 dark:outline-indigo-700/50 -outline-offset-1';
+    }
+
+    return tr(
+      classes: rowClasses,
+      events: {
+        'click': (_) {
+          if (item.id != null) {
+            if (canOpenWorkspace) {
+              context.read(currentSupportTicketProvider.notifier).setTicketId(item.id);
+              Router.of(context).push('/support/workspace');
+            } else {
+              SupportCaseDetailSidePanel.show(context, item.id!, caseItem: item);
+            }
+          }
+        },
+      },
+      [
+        td(
+          classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
+          styles: Styles(color: Color(colorScheme.textMuted)),
+          [Component.text(item.caseNumber ?? _formatId(item.id))],
+        ),
+        td(
+          classes: 'p-3.5 max-w-xs',
+          [
+            div(
+              classes: 'font-bold text-xs truncate',
+              styles: Styles(color: Color(colorScheme.textHeading)),
+              [Component.text(item.subject ?? 'No Subject')],
+            ),
+            if (item.description != null && item.description!.isNotEmpty)
+              div(
+                classes: 'text-[11px] truncate',
+                styles: Styles(color: Color(colorScheme.textMuted)),
+                [Component.text(item.description!)],
+              ),
+          ],
+        ),
+        td(
+          classes: 'p-3.5',
+          [
+            if (item.initiator != null) ...[
+              div(
+                classes: 'font-semibold text-xs truncate',
+                styles: Styles(color: Color(colorScheme.textPrimary)),
+                [
+                  Component.text(
+                    '${item.initiator?.firstName ?? ''} ${item.initiator?.lastName ?? ''}'.trim().isEmpty
+                        ? 'Initiator'
+                        : '${item.initiator?.firstName ?? ''} ${item.initiator?.lastName ?? ''}',
+                  ),
+                ],
+              ),
+              if (item.initiator?.email != null)
+                div(
+                  classes: 'text-[10.5px] font-mono truncate',
+                  styles: Styles(color: Color(colorScheme.textMuted)),
+                  [Component.text(item.initiator!.email!)],
+                ),
+            ] else
+              span(
+                classes: 'text-slate-400 font-mono text-[11px]',
+                [Component.text(_formatId(item.customerId ?? item.initiatedBy))],
+              ),
+          ],
+        ),
+        td(classes: 'p-3.5 text-center', [
+          span(
+            classes: 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textSecondary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            [Component.text(item.type ?? 'GENERAL')],
+          ),
+        ]),
+        td(classes: 'p-3.5 text-center', [
+          _PriorityPill(priority: item.priority ?? 'NORMAL', colorScheme: colorScheme),
+        ]),
+        td(classes: 'p-3.5 text-center', [
+          _StatusPill(status: item.status ?? 'OPEN', colorScheme: colorScheme),
+        ]),
+        td(
+          classes: 'p-3.5 text-xs font-medium',
+          styles: Styles(color: Color(colorScheme.textMuted)),
+          [Component.text(_formatDate(item.createdAt))],
+        ),
+        td(classes: 'p-3.5 pr-4 text-center', [
+          div(classes: 'flex items-center justify-center gap-1.5', [
+            if (canOpenWorkspace)
+              button(
+                onClick: () {
+                  if (item.id != null) {
+                    context.read(currentSupportTicketProvider.notifier).setTicketId(item.id);
+                    Router.of(context).push('/support/workspace');
+                  }
+                },
+                classes:
+                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer border-none flex items-center gap-1 active:scale-95 shrink-0',
+                styles: Styles(backgroundColor: Color(colorScheme.primary)),
+                [
+                  div(classes: 'w-3 h-3', [const AppIcon(AppIcons.externalLink)]),
+                  Component.text('Workspace'),
+                ],
+              )
+            else
+              button(
+                onClick: () {
+                  if (item.id != null) {
+                    SupportCaseDetailSidePanel.show(context, item.id!, caseItem: item);
+                  }
+                },
+                classes:
+                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs transition-all cursor-pointer border-none flex items-center gap-1 active:scale-95 shrink-0',
+                styles: Styles(backgroundColor: Color(colorScheme.primary)),
+                [
+                  Component.text('View Details'),
+                ],
+              ),
+          ]),
+        ]),
+      ],
     );
   }
 }
@@ -592,21 +660,7 @@ class _StatusPill extends StatelessComponent {
   }
 }
 
-class _AssignedBadge extends StatelessComponent {
-  const _AssignedBadge();
 
-  @override
-  Component build(BuildContext context) {
-    return span(
-      classes:
-          'px-2 py-0.5 rounded-full text-[9.5px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 inline-flex items-center gap-1',
-      [
-        span(classes: 'w-1.5 h-1.5 rounded-full bg-indigo-500', []),
-        Component.text('Assigned'),
-      ],
-    );
-  }
-}
 
 class _PriorityPill extends StatelessComponent {
   final String priority;

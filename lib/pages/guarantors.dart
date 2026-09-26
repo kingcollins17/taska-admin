@@ -325,7 +325,7 @@ class _GuarantorsTableState extends State<_GuarantorsTable> {
                 classes: 'overflow-x-auto rounded-xl border transition-colors',
                 styles: Styles(raw: {'border-color': colorScheme.border}),
                 [
-                  table(classes: 'w-full text-left border-collapse text-xs', [
+                  table(classes: 'w-full min-w-[950px] text-left border-collapse text-xs', [
                     thead(
                       classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
                       styles: Styles(
@@ -335,15 +335,15 @@ class _GuarantorsTableState extends State<_GuarantorsTable> {
                       ),
                       [
                         tr([
-                          th(classes: 'p-3.5 pl-4', [Component.text('Guarantor ID')]),
-                          th(classes: 'p-3.5', [Component.text('Provider ID')]),
-                          th(classes: 'p-3.5', [Component.text('Guarantor Name')]),
-                          th(classes: 'p-3.5', [Component.text('Relationship')]),
-                          th(classes: 'p-3.5', [Component.text('Phone')]),
-                          th(classes: 'p-3.5 text-center', [Component.text('Status')]),
-                          th(classes: 'p-3.5', [Component.text('Verified At')]),
-                          th(classes: 'p-3.5', [Component.text('Created At')]),
-                          th(classes: 'p-3.5 pr-4 text-center', [Component.text('Actions')]),
+                          th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Guarantor ID')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Provider ID')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Guarantor Name')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Relationship')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Phone')]),
+                          th(classes: 'p-3.5 text-center whitespace-nowrap', [Component.text('Status')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Verified At')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Created At')]),
+                          th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
                         ]),
                       ],
                     ),
@@ -357,23 +357,23 @@ class _GuarantorsTableState extends State<_GuarantorsTable> {
                         for (final g in items)
                           tr(classes: 'hover:opacity-90 transition-colors', [
                             td(
-                              classes: 'p-3.5 pl-4 font-mono font-bold text-[11px]',
+                              classes: 'p-3.5 pl-4 font-mono font-bold text-[11px] whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
                               [Component.text(_formatId(g.id))],
                             ),
                             td(
-                              classes: 'p-3.5 font-mono text-xs font-semibold',
+                              classes: 'p-3.5 font-mono text-xs font-semibold whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textPrimary)),
                               [Component.text(_formatId(g.providerId))],
                             ),
                             td(
-                              classes: 'p-3.5 font-bold text-xs',
+                              classes: 'p-3.5 font-bold text-xs whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textHeading)),
                               [Component.text(g.guarantorName ?? 'N/A')],
                             ),
-                            td(classes: 'p-3.5', [
+                            td(classes: 'p-3.5 whitespace-nowrap', [
                               span(
-                                classes: 'px-2.5 py-1 rounded-md text-[11px] font-semibold border',
+                                classes: 'px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap inline-block',
                                 styles: Styles(
                                   backgroundColor: Color(colorScheme.inputBg),
                                   color: Color(colorScheme.textSecondary),
@@ -383,31 +383,31 @@ class _GuarantorsTableState extends State<_GuarantorsTable> {
                               ),
                             ]),
                             td(
-                              classes: 'p-3.5 font-medium text-xs',
+                              classes: 'p-3.5 font-medium text-xs whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
                               [Component.text(g.guarantorPhone ?? 'N/A')],
                             ),
                             td(
-                              classes: 'p-3.5 text-center',
+                              classes: 'p-3.5 text-center whitespace-nowrap',
                               [_GuarantorBadgePill(status: g.status ?? 'UNKNOWN', colorScheme: colorScheme)],
                             ),
                             td(
-                              classes: 'p-3.5 text-xs font-medium',
+                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
                               [Component.text(_formatDate(g.verifiedAt))],
                             ),
                             td(
-                              classes: 'p-3.5 text-xs font-medium',
+                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
                               [Component.text(_formatDate(g.createdAt))],
                             ),
-                            td(classes: 'p-3.5 pr-4 text-center', [
+                            td(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [
                               button(
                                 onClick: () {
                                   GuarantorDetailSidePanel.show(context, g);
                                 },
                                 classes:
-                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all active:scale-95 border-none',
+                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all active:scale-95 border-none whitespace-nowrap shrink-0',
                                 styles: Styles(backgroundColor: Color(colorScheme.primary)),
                                 [Component.text('View Detail')],
                               ),
@@ -538,7 +538,7 @@ class _GuarantorBadgePill extends StatelessComponent {
   @override
   Component build(BuildContext context) {
     String badgeClasses =
-        'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none tracking-tight border';
+        'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none tracking-tight border whitespace-nowrap';
     String bg = 'bg-slate-100 dark:bg-slate-800';
     String text = 'text-slate-700 dark:text-slate-300';
     String border = 'border-slate-200 dark:border-slate-700';
