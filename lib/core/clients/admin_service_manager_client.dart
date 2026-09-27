@@ -6,6 +6,10 @@ import 'package:taska_admin/core/providers/network_providers.dart';
 import '../models/clients/base_response.dart';
 import '../models/clients/services/admin_category_item.dart';
 import '../models/clients/services/admin_service_item.dart';
+import '../models/clients/services/create_category_request.dart';
+import '../models/clients/services/create_service_request.dart';
+import '../models/clients/services/update_category_request.dart';
+import '../models/clients/services/update_service_request.dart';
 
 part 'admin_service_manager_client.g.dart';
 
@@ -35,6 +39,25 @@ abstract class AdminServiceManagerClient {
     @Path('category_id') String categoryId,
   );
 
+  /// Create a new category.
+  @POST('/categories')
+  Future<BaseApiResponse<AdminCategoryItem>> createCategory(
+    @Body() CreateCategoryRequest body,
+  );
+
+  /// Update an existing category by its ID.
+  @PUT('/categories/{category_id}')
+  Future<BaseApiResponse<AdminCategoryItem>> updateCategory(
+    @Path('category_id') String categoryId,
+    @Body() UpdateCategoryRequest body,
+  );
+
+  /// Delete a service category by its ID.
+  @DELETE('/categories/{category_id}')
+  Future<BaseApiResponse<dynamic>> deleteCategory(
+    @Path('category_id') String categoryId,
+  );
+
   /// Retrieve a list of services with pagination, filtering, searching and sorting.
   @GET('/services')
   Future<BaseApiResponse<PaginatedData<AdminServiceItem>>> getServices({
@@ -53,29 +76,22 @@ abstract class AdminServiceManagerClient {
     @Path('service_id') String serviceId,
   );
 
-  /// Update an existing category by its ID.
-  @PUT('/categories/{category_id}')
-  Future<BaseApiResponse<AdminCategoryItem>> updateCategory(
-    @Path('category_id') String categoryId,
-    @Body() Map<String, dynamic> body,
+  /// Create a new service.
+  @POST('/services')
+  Future<BaseApiResponse<AdminServiceItem>> createService(
+    @Body() CreateServiceRequest body,
   );
 
   /// Update an existing service by its ID.
   @PUT('/services/{service_id}')
   Future<BaseApiResponse<AdminServiceItem>> updateService(
     @Path('service_id') String serviceId,
-    @Body() Map<String, dynamic> body,
+    @Body() UpdateServiceRequest body,
   );
 
-  /// Create a new category.
-  @POST('/categories')
-  Future<BaseApiResponse<AdminCategoryItem>> createCategory(
-    @Body() Map<String, dynamic> body,
-  );
-
-  /// Create a new service.
-  @POST('/services')
-  Future<BaseApiResponse<AdminServiceItem>> createService(
-    @Body() Map<String, dynamic> body,
+  /// Delete a service by its ID.
+  @DELETE('/services/{service_id}')
+  Future<BaseApiResponse<dynamic>> deleteService(
+    @Path('service_id') String serviceId,
   );
 }

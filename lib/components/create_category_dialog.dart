@@ -4,6 +4,7 @@ import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
 import '../core/designs/app_icons.dart';
 import '../core/designs/components/app_icon.dart';
+import '../core/models/clients/services/create_category_request.dart';
 import '../core/providers/admin_service_manager_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
@@ -25,6 +26,10 @@ class _CreateCategoryDialogState extends State<CreateCategoryDialog> {
   String _name = '';
   String _description = '';
   String _imageUrl = '';
+  String _defaultBasePrice = '0';
+  String _defaultDurationMin = '60';
+  String _perKmRate = '150';
+  String _perMinuteRate = '20';
   bool _isActive = true;
 
   bool _isSubmitting = false;
@@ -43,15 +48,19 @@ class _CreateCategoryDialogState extends State<CreateCategoryDialog> {
       _errorMessage = null;
     });
 
-    final payload = <String, dynamic>{
-      'name': _name.trim(),
-      'description': _description.trim().isEmpty ? null : _description.trim(),
-      'image_url': _imageUrl.trim().isEmpty ? null : _imageUrl.trim(),
-      'is_active': _isActive,
-    };
+    final request = CreateCategoryRequest(
+      name: _name.trim(),
+      description: _description.trim().isEmpty ? null : _description.trim(),
+      imageUrl: _imageUrl.trim().isEmpty ? null : _imageUrl.trim(),
+      defaultBasePrice: double.tryParse(_defaultBasePrice.trim()) ?? 0,
+      defaultDurationMin: int.tryParse(_defaultDurationMin.trim()) ?? 60,
+      perKmRate: double.tryParse(_perKmRate.trim()) ?? 150,
+      perMinuteRate: double.tryParse(_perMinuteRate.trim()) ?? 20,
+      isActive: _isActive,
+    );
 
     context.read(adminServiceManagerNotifierProvider.notifier).createCategory(
-      payload,
+      request,
       onSuccess: (message) {
         if (!mounted) return;
         setState(() => _isSubmitting = false);
@@ -78,7 +87,7 @@ class _CreateCategoryDialogState extends State<CreateCategoryDialog> {
   Component build(BuildContext context) {
     final colorScheme = context.colorScheme;
 
-    return div(classes: 'space-y-4 text-xs max-w-lg w-full', [
+    return div(classes: 'space-y-4 text-xs max-w-xl w-full max-h-[80vh] overflow-y-auto pr-1', [
       // Error Banner
       if (_errorMessage != null)
         div(
@@ -129,7 +138,7 @@ class _CreateCategoryDialogState extends State<CreateCategoryDialog> {
         ),
         textarea(
           classes:
-              'w-full border rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all resize-none min-h-[80px]',
+              'w-full border rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all resize-none min-h-[75px]',
           styles: Styles(
             backgroundColor: Color(colorScheme.inputBg),
             color: Color(colorScheme.textPrimary),
@@ -142,6 +151,100 @@ class _CreateCategoryDialogState extends State<CreateCategoryDialog> {
           onInput: (val) => setState(() => _description = val.toString()),
           [],
         ),
+      ]),
+
+      // Grid for Category Defaults
+      div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+        // Default Base Price Field
+        div(classes: 'space-y-1.5', [
+          label(
+            classes: 'block text-xs font-bold uppercase tracking-wider',
+            styles: Styles(color: Color(colorScheme.textMuted)),
+            [Component.text('Default Base Price')],
+          ),
+          input(
+            type: InputType.number,
+            value: _defaultBasePrice,
+            classes:
+                'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textPrimary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            attributes: {'placeholder': '0.00', 'step': '0.01', 'min': '0'},
+            onInput: (val) => setState(() => _defaultBasePrice = val.toString()),
+          ),
+        ]),
+
+        // Default Duration Min
+        div(classes: 'space-y-1.5', [
+          label(
+            classes: 'block text-xs font-bold uppercase tracking-wider',
+            styles: Styles(color: Color(colorScheme.textMuted)),
+            [Component.text('Default Duration (Mins)')],
+          ),
+          input(
+            type: InputType.number,
+            value: _defaultDurationMin,
+            classes:
+                'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textPrimary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            attributes: {'placeholder': '60', 'step': '1', 'min': '0'},
+            onInput: (val) => setState(() => _defaultDurationMin = val.toString()),
+          ),
+        ]),
+      ]),
+
+      // Grid for Default Rates
+      div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+        // Per KM Rate Field
+        div(classes: 'space-y-1.5', [
+          label(
+            classes: 'block text-xs font-bold uppercase tracking-wider',
+            styles: Styles(color: Color(colorScheme.textMuted)),
+            [Component.text('Per KM Rate')],
+          ),
+          input(
+            type: InputType.number,
+            value: _perKmRate,
+            classes:
+                'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textPrimary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            attributes: {'placeholder': '150', 'step': '1', 'min': '0'},
+            onInput: (val) => setState(() => _perKmRate = val.toString()),
+          ),
+        ]),
+
+        // Per Minute Rate Field
+        div(classes: 'space-y-1.5', [
+          label(
+            classes: 'block text-xs font-bold uppercase tracking-wider',
+            styles: Styles(color: Color(colorScheme.textMuted)),
+            [Component.text('Per Minute Rate')],
+          ),
+          input(
+            type: InputType.number,
+            value: _perMinuteRate,
+            classes:
+                'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textPrimary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            attributes: {'placeholder': '20', 'step': '1', 'min': '0'},
+            onInput: (val) => setState(() => _perMinuteRate = val.toString()),
+          ),
+        ]),
       ]),
 
       // Image URL Field

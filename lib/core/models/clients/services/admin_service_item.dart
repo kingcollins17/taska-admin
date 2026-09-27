@@ -8,7 +8,13 @@ class AdminServiceItem {
   final String? id;
   final String? name;
   final String? imageUrl;
+  final num? basePrice;
+  final int? defaultDurationMin;
+  final num? perKmRate;
+  final num? perMinuteRate;
   final num? takeRate;
+  final int? minTierRequired;
+  final bool? isHighRisk;
   final bool? isActive;
   final String? categoryId;
   final AdminCategoryItem? category;
@@ -19,7 +25,13 @@ class AdminServiceItem {
     this.id,
     this.name,
     this.imageUrl,
+    this.basePrice,
+    this.defaultDurationMin,
+    this.perKmRate,
+    this.perMinuteRate,
     this.takeRate,
+    this.minTierRequired,
+    this.isHighRisk,
     this.isActive,
     this.categoryId,
     this.category,

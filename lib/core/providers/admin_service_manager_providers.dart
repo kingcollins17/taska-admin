@@ -5,6 +5,10 @@ import '../clients/admin_service_manager_client.dart';
 import '../models/clients/base_response.dart';
 import '../models/clients/services/admin_category_item.dart';
 import '../models/clients/services/admin_service_item.dart';
+import '../models/clients/services/create_category_request.dart';
+import '../models/clients/services/create_service_request.dart';
+import '../models/clients/services/update_category_request.dart';
+import '../models/clients/services/update_service_request.dart';
 
 class ListCategoriesParams {
   final int? page;
@@ -150,14 +154,14 @@ class AdminServiceManagerNotifier extends AsyncNotifier<void> {
   Future<void> build() async {}
 
   Future<void> createCategory(
-    Map<String, dynamic> body, {
+    CreateCategoryRequest request, {
     void Function(String message)? onSuccess,
     void Function(String message)? onError,
   }) async {
     state = const AsyncValue.loading();
     try {
       final client = ref.read(adminServiceManagerClientProvider);
-      final response = await client.createCategory(body);
+      final response = await client.createCategory(request);
       final successMsg = response.message ?? response.detail ?? 'Category created successfully';
       state = const AsyncValue.data(null);
       onSuccess?.call(successMsg);
@@ -170,14 +174,14 @@ class AdminServiceManagerNotifier extends AsyncNotifier<void> {
 
   Future<void> updateCategory(
     String categoryId,
-    Map<String, dynamic> body, {
+    UpdateCategoryRequest request, {
     void Function(String message)? onSuccess,
     void Function(String message)? onError,
   }) async {
     state = const AsyncValue.loading();
     try {
       final client = ref.read(adminServiceManagerClientProvider);
-      final response = await client.updateCategory(categoryId, body);
+      final response = await client.updateCategory(categoryId, request);
       final successMsg = response.message ?? response.detail ?? 'Category updated successfully';
       state = const AsyncValue.data(null);
       onSuccess?.call(successMsg);
@@ -188,15 +192,34 @@ class AdminServiceManagerNotifier extends AsyncNotifier<void> {
     }
   }
 
-  Future<void> createService(
-    Map<String, dynamic> body, {
+  Future<void> deleteCategory(
+    String categoryId, {
     void Function(String message)? onSuccess,
     void Function(String message)? onError,
   }) async {
     state = const AsyncValue.loading();
     try {
       final client = ref.read(adminServiceManagerClientProvider);
-      final response = await client.createService(body);
+      final response = await client.deleteCategory(categoryId);
+      final successMsg = response.message ?? response.detail ?? 'Category deleted successfully';
+      state = const AsyncValue.data(null);
+      onSuccess?.call(successMsg);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      final errorMsg = _extractErrorMessage(e);
+      onError?.call(errorMsg);
+    }
+  }
+
+  Future<void> createService(
+    CreateServiceRequest request, {
+    void Function(String message)? onSuccess,
+    void Function(String message)? onError,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final client = ref.read(adminServiceManagerClientProvider);
+      final response = await client.createService(request);
       final successMsg = response.message ?? response.detail ?? 'Service created successfully';
       state = const AsyncValue.data(null);
       onSuccess?.call(successMsg);
@@ -209,15 +232,34 @@ class AdminServiceManagerNotifier extends AsyncNotifier<void> {
 
   Future<void> updateService(
     String serviceId,
-    Map<String, dynamic> body, {
+    UpdateServiceRequest request, {
     void Function(String message)? onSuccess,
     void Function(String message)? onError,
   }) async {
     state = const AsyncValue.loading();
     try {
       final client = ref.read(adminServiceManagerClientProvider);
-      final response = await client.updateService(serviceId, body);
+      final response = await client.updateService(serviceId, request);
       final successMsg = response.message ?? response.detail ?? 'Service updated successfully';
+      state = const AsyncValue.data(null);
+      onSuccess?.call(successMsg);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      final errorMsg = _extractErrorMessage(e);
+      onError?.call(errorMsg);
+    }
+  }
+
+  Future<void> deleteService(
+    String serviceId, {
+    void Function(String message)? onSuccess,
+    void Function(String message)? onError,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final client = ref.read(adminServiceManagerClientProvider);
+      final response = await client.deleteService(serviceId);
+      final successMsg = response.message ?? response.detail ?? 'Service deleted successfully';
       state = const AsyncValue.data(null);
       onSuccess?.call(successMsg);
     } catch (e, stackTrace) {
@@ -240,4 +282,3 @@ class AdminServiceManagerNotifier extends AsyncNotifier<void> {
     return e.toString();
   }
 }
-

@@ -8,6 +8,7 @@ import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/models/clients/support/admin_add_support_internal_note_body.dart';
 import '../core/models/clients/support/admin_send_support_message_body.dart';
+import '../core/models/clients/support/admin_support_attachment_item.dart';
 import '../core/models/clients/support/admin_support_message_item.dart';
 import '../core/models/clients/support/admin_support_timeline_item.dart';
 import '../core/providers/admin_support_providers.dart';
@@ -29,6 +30,7 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
   String visibility = 'PUBLIC'; // 'PUBLIC', 'INTERNAL', 'CUSTOMER_ONLY', 'PROVIDER_ONLY'
   bool isSending = false;
   bool isTimelineExpanded = false;
+  bool isAttachmentsExpanded = false;
 
   void _onMessageInput(dynamic val) {
     setState(() {
@@ -127,6 +129,9 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
     final timelineAsync = context.watch(
       adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: component.caseId!, perPage: 50)),
     );
+    final attachmentsAsync = context.watch(
+      adminSupportAttachmentsProvider(GetAdminSupportAttachmentsParams(caseId: component.caseId!, perPage: 100)),
+    );
 
     final caseDetail = caseDetailAsync.value;
     final caseNo = caseDetail?.caseNumber ?? formatSupportId(component.caseId);
@@ -201,8 +206,9 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
               data: (msgData) {
                 final messages = msgData?.items ?? [];
                 final timelines = timelineAsync.value?.items ?? [];
+                final attachments = attachmentsAsync.value?.items ?? [];
 
-                if (messages.isEmpty && timelines.isEmpty) {
+                if (messages.isEmpty && timelines.isEmpty && attachments.isEmpty) {
                   return div(classes: 'py-16 text-center space-y-3', [
                     div(
                       classes: 'w-12 h-12 mx-auto rounded-2xl flex items-center justify-center border shadow-2xs',
@@ -231,6 +237,54 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
                       channel: 'Initial Request',
                       colorScheme: colorScheme,
                     ),
+
+                  // Collapsible Attachments section (collapsed by default)
+                  if (attachments.isNotEmpty) ...[
+                    div(
+                      classes: 'my-3 flex items-center justify-between px-3.5 py-2 rounded-xl border transition-all cursor-pointer select-none shadow-2xs hover:border-[#00A870]/40',
+                      styles: Styles(
+                        backgroundColor: Color(colorScheme.inputBg),
+                        raw: {'border-color': colorScheme.borderInput},
+                      ),
+                      events: {
+                        'click': (e) {
+                          setState(() => isAttachmentsExpanded = !isAttachmentsExpanded);
+                        },
+                      },
+                      [
+                        div(classes: 'flex items-center space-x-2', [
+                          div(classes: 'w-4 h-4 text-emerald-500', [const AppIcon(AppIcons.documents)]),
+                          span(
+                            classes: 'text-xs font-bold',
+                            styles: Styles(color: Color(colorScheme.textSecondary)),
+                            [Component.text('Case Attachments (${attachments.length})')],
+                          ),
+                          span(
+                            classes: 'text-[10px] px-2 py-0.5 rounded-full font-semibold border',
+                            styles: Styles(
+                              backgroundColor: Color(colorScheme.surface),
+                              color: Color(colorScheme.textMuted),
+                              raw: {'border-color': colorScheme.borderInput},
+                            ),
+                            [Component.text(isAttachmentsExpanded ? 'Expanded' : 'Collapsed')],
+                          ),
+                        ]),
+                        div(
+                          classes: 'w-4 h-4 transition-transform duration-200 ${isAttachmentsExpanded ? 'rotate-180' : ''}',
+                          styles: Styles(color: Color(colorScheme.textMuted)),
+                          [const AppIcon(AppIcons.chevronDown)],
+                        ),
+                      ],
+                    ),
+                    if (isAttachmentsExpanded)
+                      div(
+                        classes: 'grid grid-cols-1 sm:grid-cols-2 gap-2.5 my-2.5',
+                        [
+                          for (final att in attachments)
+                            AttachmentCard(attachment: att, colorScheme: colorScheme),
+                        ],
+                      ),
+                  ],
 
                   // Messages list
                   for (final msg in messages)
@@ -658,5 +712,81 @@ class TimelineChip extends StatelessComponent {
         [],
       ),
     ]);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Attachment Item Card Component
+// ─────────────────────────────────────────────────────────────
+
+class AttachmentCard extends StatelessComponent {
+  final AdminSupportAttachmentItem attachment;
+  final ColorScheme colorScheme;
+
+  const AttachmentCard({super.key, required this.attachment, required this.colorScheme});
+
+  @override
+  Component build(BuildContext context) {
+    final filename = attachment.filename ?? 'Attachment File';
+    final formattedSize = _formatSize(attachment.size);
+    final formattedTime = formatSupportTime(attachment.createdAt);
+
+    return div(
+      classes: 'p-3 rounded-xl border flex items-center justify-between transition-all hover:border-[#00A870]/40 shadow-2xs',
+      styles: Styles(
+        backgroundColor: Color(colorScheme.surface),
+        raw: {'border-color': colorScheme.borderInput},
+      ),
+      [
+        div(classes: 'flex items-center space-x-2.5 min-w-0 flex-1 pr-2', [
+          div(
+            classes: 'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.primary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            [const AppIcon(AppIcons.documents)],
+          ),
+          div(classes: 'min-w-0 flex-1', [
+            div(
+              classes: 'font-bold text-xs truncate',
+              styles: Styles(color: Color(colorScheme.textHeading)),
+              [Component.text(filename)],
+            ),
+            div(
+              classes: 'text-[10px] flex items-center space-x-1.5 font-medium',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [
+                span([Component.text(formattedSize)]),
+                span([Component.text('•')]),
+                span([Component.text(formattedTime)]),
+              ],
+            ),
+          ]),
+        ]),
+        if (attachment.storageKey != null || attachment.id != null)
+          a(
+            href: attachment.storageKey != null && attachment.storageKey!.startsWith('http')
+                ? attachment.storageKey!
+                : '#',
+            target: Target.blank,
+            classes: 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold border transition-all cursor-pointer shrink-0 hover:opacity-80',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.primary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            [Component.text('View')],
+          ),
+      ],
+    );
+  }
+
+  String _formatSize(num? bytes) {
+    if (bytes == null || bytes <= 0) return '0 B';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

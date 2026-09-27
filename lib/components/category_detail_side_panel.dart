@@ -6,8 +6,10 @@ import 'package:universal_web/web.dart' as web;
 import '../core/designs/app_icons.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/models/clients/services/admin_category_item.dart';
+import '../core/models/clients/services/update_category_request.dart';
 import '../core/providers/admin_service_manager_providers.dart';
 import '../core/providers/ui_state_provider.dart';
+import '../core/utils/currency_formatter.dart';
 
 class CategoryDetailSidePanel extends StatefulComponent {
   final AdminCategoryItem category;
@@ -32,6 +34,10 @@ class _CategoryDetailSidePanelState extends State<CategoryDetailSidePanel> {
   late String _name;
   late String _description;
   late String _imageUrl;
+  late String _defaultBasePrice;
+  late String _defaultDurationMin;
+  late String _perKmRate;
+  late String _perMinuteRate;
   late bool _isActive;
 
   bool _isSubmitting = false;
@@ -46,6 +52,10 @@ class _CategoryDetailSidePanelState extends State<CategoryDetailSidePanel> {
     _name = c.name ?? '';
     _description = c.description ?? '';
     _imageUrl = c.imageUrl ?? '';
+    _defaultBasePrice = c.defaultBasePrice?.toString() ?? '0';
+    _defaultDurationMin = c.defaultDurationMin?.toString() ?? '60';
+    _perKmRate = c.perKmRate?.toString() ?? '150';
+    _perMinuteRate = c.perMinuteRate?.toString() ?? '20';
     _isActive = c.isActive ?? true;
   }
 
@@ -90,16 +100,20 @@ class _CategoryDetailSidePanelState extends State<CategoryDetailSidePanel> {
 
     setState(() => _isSubmitting = true);
 
-    final payload = <String, dynamic>{
-      'name': _name.trim(),
-      'description': _description.trim().isEmpty ? null : _description.trim(),
-      'image_url': _imageUrl.trim().isEmpty ? null : _imageUrl.trim(),
-      'is_active': _isActive,
-    };
+    final request = UpdateCategoryRequest(
+      name: _name.trim(),
+      description: _description.trim().isEmpty ? null : _description.trim(),
+      imageUrl: _imageUrl.trim().isEmpty ? null : _imageUrl.trim(),
+      defaultBasePrice: double.tryParse(_defaultBasePrice.trim()),
+      defaultDurationMin: int.tryParse(_defaultDurationMin.trim()),
+      perKmRate: double.tryParse(_perKmRate.trim()),
+      perMinuteRate: double.tryParse(_perMinuteRate.trim()),
+      isActive: _isActive,
+    );
 
     context.read(adminServiceManagerNotifierProvider.notifier).updateCategory(
       categoryId,
-      payload,
+      request,
       onSuccess: (msg) {
         if (!mounted) return;
         setState(() => _isSubmitting = false);
@@ -353,6 +367,94 @@ class _CategoryDetailSidePanelState extends State<CategoryDetailSidePanel> {
               ),
             ]),
 
+            // Grid for Category Defaults
+            div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Default Base Price')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _defaultBasePrice,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '0.00', 'step': '0.01', 'min': '0'},
+                  onInput: (val) => setState(() => _defaultBasePrice = val.toString()),
+                ),
+              ]),
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Default Duration (Mins)')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _defaultDurationMin,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '60', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _defaultDurationMin = val.toString()),
+                ),
+              ]),
+            ]),
+
+            // Grid for Rates
+            div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Per KM Rate')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _perKmRate,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '150', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _perKmRate = val.toString()),
+                ),
+              ]),
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Per Minute Rate')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _perMinuteRate,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '20', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _perMinuteRate = val.toString()),
+                ),
+              ]),
+            ]),
+
             // Image URL Field
             div(classes: 'space-y-1.5', [
               label(
@@ -431,6 +533,10 @@ class _CategoryDetailSidePanelState extends State<CategoryDetailSidePanel> {
           ),
           [
             _buildMetaRow('Category ID', category.id ?? 'N/A', context, copyable: true),
+            _buildMetaRow('Default Base Price', (category.defaultBasePrice ?? 0).toNaira(), context),
+            _buildMetaRow('Default Duration', '${category.defaultDurationMin ?? 60} mins', context),
+            _buildMetaRow('Per KM Rate', (category.perKmRate ?? 0).toNaira(), context),
+            _buildMetaRow('Per Minute Rate', (category.perMinuteRate ?? 0).toNaira(), context),
             _buildMetaRow('Created At', _formatDateTime(category.createdAt), context),
             _buildMetaRow('Updated At', _formatDateTime(category.updatedAt), context),
           ],

@@ -1,6 +1,7 @@
 import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+import 'package:taska_admin/core/utils/currency_formatter.dart';
 import 'package:universal_web/web.dart' as web;
 
 import '../core/designs/app_icons.dart';
@@ -55,7 +56,7 @@ class TaskDetailSidePanel extends StatelessComponent {
 
   String _formatCurrency(num? amount) {
     if (amount == null) return '₦0.00';
-    return '₦${amount.toStringAsFixed(2)}';
+    return amount.toNaira();
   }
 
   @override

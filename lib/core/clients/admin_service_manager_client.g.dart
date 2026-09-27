@@ -105,6 +105,103 @@ class _AdminServiceManagerClient implements AdminServiceManagerClient {
   }
 
   @override
+  Future<BaseApiResponse<AdminCategoryItem>> createCategory(
+    CreateCategoryRequest body,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<BaseApiResponse<AdminCategoryItem>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/categories',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late BaseApiResponse<AdminCategoryItem> _value;
+    try {
+      _value = BaseApiResponse<AdminCategoryItem>.fromJson(
+        _result.data!,
+        (json) => AdminCategoryItem.fromJson(json as Map<String, dynamic>),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<BaseApiResponse<AdminCategoryItem>> updateCategory(
+    String categoryId,
+    UpdateCategoryRequest body,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<BaseApiResponse<AdminCategoryItem>>(
+      Options(method: 'PUT', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/categories/${categoryId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late BaseApiResponse<AdminCategoryItem> _value;
+    try {
+      _value = BaseApiResponse<AdminCategoryItem>.fromJson(
+        _result.data!,
+        (json) => AdminCategoryItem.fromJson(json as Map<String, dynamic>),
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<BaseApiResponse<dynamic>> deleteCategory(String categoryId) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<BaseApiResponse<dynamic>>(
+      Options(method: 'DELETE', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/categories/${categoryId}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late BaseApiResponse<dynamic> _value;
+    try {
+      _value = BaseApiResponse<dynamic>.fromJson(
+        _result.data!,
+        (json) => json as dynamic,
+      );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<BaseApiResponse<PaginatedData<AdminServiceItem>>> getServices({
     int? page,
     int? perPage,
@@ -188,31 +285,30 @@ class _AdminServiceManagerClient implements AdminServiceManagerClient {
   }
 
   @override
-  Future<BaseApiResponse<AdminCategoryItem>> updateCategory(
-    String categoryId,
-    Map<String, dynamic> body,
+  Future<BaseApiResponse<AdminServiceItem>> createService(
+    CreateServiceRequest body,
   ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(body);
-    final _options = _setStreamType<BaseApiResponse<AdminCategoryItem>>(
-      Options(method: 'PUT', headers: _headers, extra: _extra)
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<BaseApiResponse<AdminServiceItem>>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/categories/${categoryId}',
+            '/services',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseApiResponse<AdminCategoryItem> _value;
+    late BaseApiResponse<AdminServiceItem> _value;
     try {
-      _value = BaseApiResponse<AdminCategoryItem>.fromJson(
+      _value = BaseApiResponse<AdminServiceItem>.fromJson(
         _result.data!,
-        (json) => AdminCategoryItem.fromJson(json as Map<String, dynamic>),
+        (json) => AdminServiceItem.fromJson(json as Map<String, dynamic>),
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -224,13 +320,13 @@ class _AdminServiceManagerClient implements AdminServiceManagerClient {
   @override
   Future<BaseApiResponse<AdminServiceItem>> updateService(
     String serviceId,
-    Map<String, dynamic> body,
+    UpdateServiceRequest body,
   ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    _data.addAll(body);
+    _data.addAll(body.toJson());
     final _options = _setStreamType<BaseApiResponse<AdminServiceItem>>(
       Options(method: 'PUT', headers: _headers, extra: _extra)
           .compose(
@@ -256,63 +352,27 @@ class _AdminServiceManagerClient implements AdminServiceManagerClient {
   }
 
   @override
-  Future<BaseApiResponse<AdminCategoryItem>> createCategory(
-    Map<String, dynamic> body,
-  ) async {
+  Future<BaseApiResponse<dynamic>> deleteService(String serviceId) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(body);
-    final _options = _setStreamType<BaseApiResponse<AdminCategoryItem>>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<BaseApiResponse<dynamic>>(
+      Options(method: 'DELETE', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/categories',
+            '/services/${serviceId}',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseApiResponse<AdminCategoryItem> _value;
+    late BaseApiResponse<dynamic> _value;
     try {
-      _value = BaseApiResponse<AdminCategoryItem>.fromJson(
+      _value = BaseApiResponse<dynamic>.fromJson(
         _result.data!,
-        (json) => AdminCategoryItem.fromJson(json as Map<String, dynamic>),
-      );
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<BaseApiResponse<AdminServiceItem>> createService(
-    Map<String, dynamic> body,
-  ) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(body);
-    final _options = _setStreamType<BaseApiResponse<AdminServiceItem>>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/services',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late BaseApiResponse<AdminServiceItem> _value;
-    try {
-      _value = BaseApiResponse<AdminServiceItem>.fromJson(
-        _result.data!,
-        (json) => AdminServiceItem.fromJson(json as Map<String, dynamic>),
+        (json) => json as dynamic,
       );
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

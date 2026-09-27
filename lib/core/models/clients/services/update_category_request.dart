@@ -1,10 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'admin_category_item.g.dart';
+part 'update_category_request.g.dart';
 
-@JsonSerializable(fieldRename: FieldRename.snake)
-class AdminCategoryItem {
-  final String? id;
+@JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
+class UpdateCategoryRequest {
   final String? name;
   final String? description;
   final String? imageUrl;
@@ -13,11 +12,8 @@ class AdminCategoryItem {
   final num? perKmRate;
   final num? perMinuteRate;
   final bool? isActive;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
 
-  const AdminCategoryItem({
-    this.id,
+  const UpdateCategoryRequest({
     this.name,
     this.description,
     this.imageUrl,
@@ -26,12 +22,10 @@ class AdminCategoryItem {
     this.perKmRate,
     this.perMinuteRate,
     this.isActive,
-    this.createdAt,
-    this.updatedAt,
   });
 
-  factory AdminCategoryItem.fromJson(Map<String, dynamic> json) =>
-      _$AdminCategoryItemFromJson(json);
+  factory UpdateCategoryRequest.fromJson(Map<String, dynamic> json) =>
+      _$UpdateCategoryRequestFromJson(json);
 
-  Map<String, dynamic> toJson() => _$AdminCategoryItemToJson(this);
+  Map<String, dynamic> toJson() => _$UpdateCategoryRequestToJson(this);
 }

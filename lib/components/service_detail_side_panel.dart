@@ -7,8 +7,10 @@ import '../core/designs/app_icons.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/models/clients/services/admin_category_item.dart';
 import '../core/models/clients/services/admin_service_item.dart';
+import '../core/models/clients/services/update_service_request.dart';
 import '../core/providers/admin_service_manager_providers.dart';
 import '../core/providers/ui_state_provider.dart';
+import '../core/utils/currency_formatter.dart';
 
 class ServiceDetailSidePanel extends StatefulComponent {
   final AdminServiceItem service;
@@ -32,9 +34,15 @@ class ServiceDetailSidePanel extends StatefulComponent {
 class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
   late String _name;
   late String _categoryId;
+  late String _basePrice;
+  late String _defaultDurationMin;
+  late String _perKmRate;
+  late String _perMinuteRate;
   late String _takeRate;
-  late String _imageUrl;
+  late String _minTierRequired;
+  late bool _isHighRisk;
   late bool _isActive;
+  late String _imageUrl;
 
   bool _isSubmitting = false;
 
@@ -47,9 +55,15 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
   void _initFields(AdminServiceItem s) {
     _name = s.name ?? '';
     _categoryId = s.categoryId ?? '';
+    _basePrice = s.basePrice?.toString() ?? '0';
+    _defaultDurationMin = s.defaultDurationMin?.toString() ?? '60';
+    _perKmRate = s.perKmRate?.toString() ?? '150';
+    _perMinuteRate = s.perMinuteRate?.toString() ?? '20';
     final double raw = s.takeRate?.toDouble() ?? 0;
     final double pct = (raw > 0 && raw <= 1.0) ? raw * 100 : raw;
     _takeRate = pct % 1 == 0 ? pct.toInt().toString() : pct.toString();
+    _minTierRequired = s.minTierRequired?.toString() ?? '4';
+    _isHighRisk = s.isHighRisk ?? false;
     _imageUrl = s.imageUrl ?? '';
     _isActive = s.isActive ?? true;
   }
@@ -115,17 +129,23 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
 
     setState(() => _isSubmitting = true);
 
-    final payload = <String, dynamic>{
-      'name': _name.trim(),
-      'category_id': _categoryId.trim().isEmpty ? null : _categoryId.trim(),
-      'take_rate': takeRatePayload,
-      'image_url': _imageUrl.trim().isEmpty ? null : _imageUrl.trim(),
-      'is_active': _isActive,
-    };
+    final request = UpdateServiceRequest(
+      name: _name.trim(),
+      categoryId: _categoryId.trim().isEmpty ? null : _categoryId.trim(),
+      imageUrl: _imageUrl.trim().isEmpty ? null : _imageUrl.trim(),
+      basePrice: double.tryParse(_basePrice.trim()),
+      defaultDurationMin: int.tryParse(_defaultDurationMin.trim()),
+      perKmRate: double.tryParse(_perKmRate.trim()),
+      perMinuteRate: double.tryParse(_perMinuteRate.trim()),
+      takeRate: takeRatePayload,
+      minTierRequired: int.tryParse(_minTierRequired.trim()),
+      isHighRisk: _isHighRisk,
+      isActive: _isActive,
+    );
 
     context.read(adminServiceManagerNotifierProvider.notifier).updateService(
       serviceId,
-      payload,
+      request,
       onSuccess: (msg) {
         if (!mounted) return;
         setState(() => _isSubmitting = false);
@@ -257,7 +277,7 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
                 'flex flex-wrap items-center justify-between gap-2.5 pt-3.5 border-t',
             styles: Styles(raw: {'border-color': colorScheme.border}),
             [
-              div(classes: 'flex items-center space-x-2', [
+              div(classes: 'flex flex-wrap items-center gap-2', [
                 // Active Status Badge
                 span(
                   classes:
@@ -293,6 +313,19 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
                     Component.text(_isActive ? '● Active' : '○ Inactive'),
                   ],
                 ),
+
+                // High Risk Badge
+                if (_isHighRisk)
+                  span(
+                    classes:
+                        'px-2.5 py-1 rounded-lg text-[10.5px] font-black tracking-wider uppercase border',
+                    styles: Styles(
+                      backgroundColor: Color.rgba(244, 63, 94, 0.15),
+                      color: Color.rgba(190, 18, 60, 1.0),
+                      raw: {'border-color': 'rgba(244, 63, 94, 0.4)'},
+                    ),
+                    [Component.text('⚡ High Risk')],
+                  ),
 
                 // Take Rate Chip
                 span(
@@ -424,26 +457,136 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
               ),
             ]),
 
-            // Take Rate (%) Field
-            div(classes: 'space-y-1.5', [
-              label(
-                classes: 'block text-xs font-bold',
-                styles: Styles(color: Color(colorScheme.textHeading)),
-                [Component.text('Take Rate (%)')],
-              ),
-              input(
-                type: InputType.number,
-                value: _takeRate,
-                classes:
-                    'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
-                styles: Styles(
-                  backgroundColor: Color(colorScheme.inputBg),
-                  color: Color(colorScheme.textPrimary),
-                  raw: {'border-color': colorScheme.borderInput},
+            // Pricing & Duration Fields
+            div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Base Price')],
                 ),
-                attributes: {'placeholder': 'e.g. 15.0', 'step': '0.1', 'min': '0', 'max': '100'},
-                onInput: (val) => setState(() => _takeRate = val.toString()),
-              ),
+                input(
+                  type: InputType.number,
+                  value: _basePrice,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '0.00', 'step': '0.01', 'min': '0'},
+                  onInput: (val) => setState(() => _basePrice = val.toString()),
+                ),
+              ]),
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Default Duration (Mins)')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _defaultDurationMin,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '60', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _defaultDurationMin = val.toString()),
+                ),
+              ]),
+            ]),
+
+            // Rates Fields
+            div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Per KM Rate')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _perKmRate,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '150', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _perKmRate = val.toString()),
+                ),
+              ]),
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Per Minute Rate')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _perMinuteRate,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '20', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _perMinuteRate = val.toString()),
+                ),
+              ]),
+            ]),
+
+            // Take Rate & Min Tier
+            div(classes: 'grid grid-cols-1 sm:grid-cols-2 gap-3', [
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Take Rate (%)')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _takeRate,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': 'e.g. 15.0', 'step': '0.1', 'min': '0', 'max': '100'},
+                  onInput: (val) => setState(() => _takeRate = val.toString()),
+                ),
+              ]),
+              div(classes: 'space-y-1.5', [
+                label(
+                  classes: 'block text-xs font-bold',
+                  styles: Styles(color: Color(colorScheme.textHeading)),
+                  [Component.text('Min Tier Required')],
+                ),
+                input(
+                  type: InputType.number,
+                  value: _minTierRequired,
+                  classes:
+                      'w-full border rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 transition-all',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.textPrimary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'placeholder': '4', 'step': '1', 'min': '0'},
+                  onInput: (val) => setState(() => _minTierRequired = val.toString()),
+                ),
+              ]),
             ]),
 
             // Image URL Field
@@ -468,42 +611,81 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
               ),
             ]),
 
-            // Active Status Checkbox / Toggle
-            div(classes: 'flex items-center justify-between pt-2 border-t',
+            // Toggles
+            div(classes: 'space-y-3 pt-2 border-t',
               styles: Styles(raw: {'border-color': colorScheme.border}),
               [
-                div(classes: 'space-y-0.5', [
-                  span(
-                    classes: 'block text-xs font-bold',
-                    styles: Styles(color: Color(colorScheme.textHeading)),
-                    [Component.text('Service Active Status')],
-                  ),
-                  span(
-                    classes: 'block text-[11px]',
-                    styles: Styles(color: Color(colorScheme.textMuted)),
-                    [Component.text('Active services are visible to users & providers')],
+                // High Risk Toggle
+                div(classes: 'flex items-center justify-between', [
+                  div(classes: 'space-y-0.5', [
+                    span(
+                      classes: 'block text-xs font-bold',
+                      styles: Styles(color: Color(colorScheme.textHeading)),
+                      [Component.text('High Risk Service')],
+                    ),
+                    span(
+                      classes: 'block text-[11px]',
+                      styles: Styles(color: Color(colorScheme.textMuted)),
+                      [Component.text('Requires additional provider vetting')],
+                    ),
+                  ]),
+                  button(
+                    type: ButtonType.button,
+                    onClick: () => setState(() => _isHighRisk = !_isHighRisk),
+                    classes:
+                        'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs',
+                    styles: _isHighRisk
+                        ? Styles(
+                            backgroundColor: Color.rgba(244, 63, 94, 0.15),
+                            color: Color.rgba(190, 18, 60, 1.0),
+                            raw: {'border-color': 'rgba(244, 63, 94, 0.4)'},
+                          )
+                        : Styles(
+                            backgroundColor: Color.rgba(100, 116, 139, 0.15),
+                            color: Color(colorScheme.textSecondary),
+                            raw: {'border-color': colorScheme.borderInput},
+                          ),
+                    [
+                      Component.text(_isHighRisk ? '⚡ High Risk' : 'Standard'),
+                    ],
                   ),
                 ]),
-                button(
-                  type: ButtonType.button,
-                  onClick: () => setState(() => _isActive = !_isActive),
-                  classes:
-                      'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs',
-                  styles: _isActive
-                      ? Styles(
-                          backgroundColor: Color.rgba(16, 185, 129, 0.15),
-                          color: Color.rgba(4, 120, 87, 1.0),
-                          raw: {'border-color': 'rgba(16, 185, 129, 0.4)'},
-                        )
-                      : Styles(
-                          backgroundColor: Color.rgba(244, 63, 94, 0.15),
-                          color: Color.rgba(190, 18, 60, 1.0),
-                          raw: {'border-color': 'rgba(244, 63, 94, 0.4)'},
-                        ),
-                  [
-                    Component.text(_isActive ? '● Active' : '○ Inactive'),
-                  ],
-                ),
+
+                // Active Status Checkbox / Toggle
+                div(classes: 'flex items-center justify-between', [
+                  div(classes: 'space-y-0.5', [
+                    span(
+                      classes: 'block text-xs font-bold',
+                      styles: Styles(color: Color(colorScheme.textHeading)),
+                      [Component.text('Service Active Status')],
+                    ),
+                    span(
+                      classes: 'block text-[11px]',
+                      styles: Styles(color: Color(colorScheme.textMuted)),
+                      [Component.text('Active services are visible to users & providers')],
+                    ),
+                  ]),
+                  button(
+                    type: ButtonType.button,
+                    onClick: () => setState(() => _isActive = !_isActive),
+                    classes:
+                        'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-xs',
+                    styles: _isActive
+                        ? Styles(
+                            backgroundColor: Color.rgba(16, 185, 129, 0.15),
+                            color: Color.rgba(4, 120, 87, 1.0),
+                            raw: {'border-color': 'rgba(16, 185, 129, 0.4)'},
+                          )
+                        : Styles(
+                            backgroundColor: Color.rgba(244, 63, 94, 0.15),
+                            color: Color.rgba(190, 18, 60, 1.0),
+                            raw: {'border-color': 'rgba(244, 63, 94, 0.4)'},
+                          ),
+                    [
+                      Component.text(_isActive ? '● Active' : '○ Inactive'),
+                    ],
+                  ),
+                ]),
               ],
             ),
           ],
@@ -525,6 +707,13 @@ class _ServiceDetailSidePanelState extends State<ServiceDetailSidePanel> {
             _buildMetaRow('Service ID', service.id ?? 'N/A', context, copyable: true),
             _buildMetaRow('Category Name', service.category?.name ?? 'N/A', context),
             _buildMetaRow('Category ID', service.categoryId ?? 'N/A', context, copyable: true),
+            _buildMetaRow('Base Price', (service.basePrice ?? 0).toNaira(), context),
+            _buildMetaRow('Default Duration', '${service.defaultDurationMin ?? 60} mins', context),
+            _buildMetaRow('Per KM Rate', (service.perKmRate ?? 0).toNaira(), context),
+            _buildMetaRow('Per Minute Rate', (service.perMinuteRate ?? 0).toNaira(), context),
+            _buildMetaRow('Take Rate', _formattedTakeRate(service.takeRate), context),
+            _buildMetaRow('Min Tier Required', service.minTierRequired?.toString() ?? '4', context),
+            _buildMetaRow('High Risk', service.isHighRisk == true ? 'Yes' : 'No', context),
             _buildMetaRow('Created At', _formatDateTime(service.createdAt), context),
             _buildMetaRow('Updated At', _formatDateTime(service.updatedAt), context),
           ],

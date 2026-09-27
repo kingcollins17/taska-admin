@@ -6,7 +6,9 @@ import 'package:universal_web/web.dart' as web;
 import '../core/designs/app_icons.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/models/clients/users/admin_platform_user_item.dart';
+import '../core/models/clients/users/admin_user_status_update_body.dart';
 import '../core/providers/admin_user_providers.dart';
+import '../core/providers/stats_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 import 'schedule_interview_dialog.dart';
 
@@ -64,6 +66,7 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
     final isProvider = user.type == 'PROVIDER' || detail?.type == 'PROVIDER';
     final hasSelfie = isProvider && selfieUrl != null && selfieUrl.trim().isNotEmpty;
     final activeSelfieUrl = hasSelfie ? selfieUrl.trim() : null;
+    final isCurrentlyActive = detail?.isActive ?? user.isActive ?? true;
 
     return div(classes: 'space-y-6 text-xs pb-8 relative', [
       // ─────────────────────────────────────────────────────────────
@@ -102,16 +105,16 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
                       : {},
                 ),
                 div(
-                  classes: user.isActive == true
+                  classes: isCurrentlyActive
                       ? 'w-3.5 h-3.5 rounded-full ring-4 absolute -bottom-1 -right-1 shadow-sm'
                       : 'w-3.5 h-3.5 rounded-full ring-4 absolute -bottom-1 -right-1 shadow-sm',
-                  styles: user.isActive == true
+                  styles: isCurrentlyActive
                       ? Styles(
                           backgroundColor: Color.rgba(52, 211, 153, 1.0),
                           raw: {'ring-color': colorScheme.surface},
                         )
                       : Styles(
-                          backgroundColor: Color.rgba(148, 163, 184, 1.0),
+                          backgroundColor: Color.rgba(244, 63, 94, 1.0),
                           raw: {'ring-color': colorScheme.surface},
                         ),
                   [],
@@ -172,13 +175,13 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
             ]),
           ]),
 
-          // Badges & Copy ID Action Row
+          // Badges & Actions Row
           div(
             classes:
                 'flex flex-wrap items-center justify-between gap-2.5 pt-3.5 border-t',
             styles: Styles(raw: {'border-color': colorScheme.border}),
             [
-              div(classes: 'flex items-center space-x-2', [
+              div(classes: 'flex flex-wrap items-center gap-2', [
                 // Role Badge
                 span(
                   classes:
@@ -209,7 +212,7 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
                 span(
                   classes:
                       'px-2.5 py-1 rounded-lg text-[10.5px] font-black tracking-wider uppercase border',
-                  styles: user.isActive == true
+                  styles: isCurrentlyActive
                       ? Styles(
                           backgroundColor: isDark ? Color.rgba(16, 185, 129, 0.18) : Color.rgba(16, 185, 129, 0.1),
                           color: isDark ? Color.rgba(110, 231, 183, 1.0) : Color.rgba(4, 120, 87, 1.0),
@@ -221,12 +224,12 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
                           raw: {'border-color': isDark ? 'rgba(244, 63, 94, 0.4)' : 'rgba(244, 63, 94, 0.25)'},
                         ),
                   [
-                    Component.text(user.isActive == true ? '● Active' : '○ Inactive'),
+                    Component.text(isCurrentlyActive ? '● Active' : '○ Inactive'),
                   ],
                 ),
               ]),
 
-              div(classes: 'flex items-center space-x-2', [
+              div(classes: 'flex flex-wrap items-center gap-2', [
                 // Quick Copy ID Button Chip
                 button(
                   type: ButtonType.button,
@@ -249,6 +252,33 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
                       ],
                     ),
                     span([Component.text('Copy ID')]),
+                  ],
+                ),
+
+                // Status Update (Activate / Deactivate) Button Chip
+                button(
+                  type: ButtonType.button,
+                  classes: isCurrentlyActive
+                      ? 'px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95 shadow-sm border text-rose-600 dark:text-rose-400 border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20'
+                      : 'px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95 shadow-sm border text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20',
+                  events: {
+                    'click': (_) {
+                      _UpdateUserStatusDialog.show(
+                        context,
+                        userId: user.id ?? '',
+                        userName: user.fullname ?? user.email ?? 'User',
+                        isCurrentlyActive: isCurrentlyActive,
+                      );
+                    },
+                  },
+                  [
+                    div(
+                      classes: 'w-3.5 h-3.5 shrink-0',
+                      [
+                        AppIcon(isCurrentlyActive ? AppIcons.disputes : AppIcons.checkCircle),
+                      ],
+                    ),
+                    span([Component.text(isCurrentlyActive ? 'Deactivate' : 'Activate')]),
                   ],
                 ),
 
@@ -311,6 +341,51 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
       // ─────────────────────────────────────────────────────────────
       if (userId != null && userId.isNotEmpty)
         _buildDetailedSection(context, userId),
+
+      // ─────────────────────────────────────────────────────────────
+      // Bottom Sticky Action Footer
+      // ─────────────────────────────────────────────────────────────
+      div(
+        classes:
+            'pt-4 border-t flex items-center justify-between gap-3 sticky bottom-0 z-10 p-2.5 rounded-2xl shadow-lg backdrop-blur-md',
+        styles: Styles(
+          backgroundColor: Color(colorScheme.surface),
+          raw: {'border-color': colorScheme.border},
+        ),
+        [
+          div(classes: 'space-y-0.5 px-2', [
+            span(
+              classes: 'block text-xs font-bold',
+              styles: Styles(color: Color(colorScheme.textHeading)),
+              [Component.text('Account Status Governance')],
+            ),
+            span(
+              classes: 'block text-[11px]',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [Component.text(isCurrentlyActive ? 'Account is active and unrestricted' : 'Account is currently deactivated')],
+            ),
+          ]),
+
+          button(
+            type: ButtonType.button,
+            onClick: () {
+              _UpdateUserStatusDialog.show(
+                context,
+                userId: user.id ?? '',
+                userName: user.fullname ?? user.email ?? 'User',
+                isCurrentlyActive: isCurrentlyActive,
+              );
+            },
+            classes: isCurrentlyActive
+                ? 'px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all cursor-pointer shadow-md hover:opacity-90 active:scale-95 flex items-center space-x-2 bg-rose-600'
+                : 'px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all cursor-pointer shadow-md hover:opacity-90 active:scale-95 flex items-center space-x-2 bg-emerald-600',
+            [
+              AppIcon(isCurrentlyActive ? AppIcons.disputes : AppIcons.checkCircle),
+              span([Component.text(isCurrentlyActive ? 'Deactivate User' : 'Activate User')]),
+            ],
+          ),
+        ],
+      ),
 
       // ─────────────────────────────────────────────────────────────
       // Full Selfie Picture Modal Overlay
@@ -835,5 +910,250 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
     } catch (_) {
       return raw;
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// User Activation / Deactivation Dialog Component
+// ─────────────────────────────────────────────────────────────
+
+class _UpdateUserStatusDialog extends StatefulComponent {
+  final String userId;
+  final String userName;
+  final bool isCurrentlyActive;
+
+  const _UpdateUserStatusDialog({
+    required this.userId,
+    required this.userName,
+    required this.isCurrentlyActive,
+  });
+
+  static void show(
+    BuildContext context, {
+    required String userId,
+    required String userName,
+    required bool isCurrentlyActive,
+  }) {
+    context.showDialog(
+      _UpdateUserStatusDialog(
+        userId: userId,
+        userName: userName,
+        isCurrentlyActive: isCurrentlyActive,
+      ),
+      title: isCurrentlyActive ? 'Deactivate User Account' : 'Activate User Account',
+    );
+  }
+
+  @override
+  State<_UpdateUserStatusDialog> createState() => _UpdateUserStatusDialogState();
+}
+
+class _UpdateUserStatusDialogState extends State<_UpdateUserStatusDialog> {
+  String _reason = '';
+  bool _isSubmitting = false;
+  String? _errorMessage;
+
+  void _handleSubmit(BuildContext context) {
+    if (_reason.trim().isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter a reason note for this account status change.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    final body = AdminUserStatusUpdateBody(reason: _reason.trim());
+
+    if (component.isCurrentlyActive) {
+      context.read(adminUserManagementProvider.notifier).deactivateUser(
+        component.userId,
+        body,
+        onSuccess: () {
+          if (!mounted) return;
+          setState(() => _isSubmitting = false);
+          context.showFlushbar(
+            title: 'User Deactivated',
+            message: 'User account has been deactivated successfully.',
+            type: FlushbarType.success,
+          );
+          context.invalidate(adminUserDetailProvider(component.userId));
+          context.invalidate(adminUsersProvider(const GetUsersParams()));
+          context.invalidate(adminUserStatsProvider);
+          context.hideDialog();
+        },
+        onError: (message) {
+          if (!mounted) return;
+          setState(() {
+            _isSubmitting = false;
+            _errorMessage = message;
+          });
+        },
+      );
+    } else {
+      context.read(adminUserManagementProvider.notifier).activateUser(
+        component.userId,
+        body,
+        onSuccess: () {
+          if (!mounted) return;
+          setState(() => _isSubmitting = false);
+          context.showFlushbar(
+            title: 'User Activated',
+            message: 'User account has been activated successfully.',
+            type: FlushbarType.success,
+          );
+          context.invalidate(adminUserDetailProvider(component.userId));
+          context.invalidate(adminUsersProvider(const GetUsersParams()));
+          context.invalidate(adminUserStatsProvider);
+          context.hideDialog();
+        },
+        onError: (message) {
+          if (!mounted) return;
+          setState(() {
+            _isSubmitting = false;
+            _errorMessage = message;
+          });
+        },
+      );
+    }
+  }
+
+  @override
+  Component build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final isDeactivating = component.isCurrentlyActive;
+
+    return div(classes: 'space-y-4 text-xs max-w-lg w-full', [
+      // Banner
+      div(
+        classes: 'p-3.5 rounded-xl border flex items-start space-x-3 text-xs',
+        styles: isDeactivating
+            ? Styles(
+                backgroundColor: Color.rgba(244, 63, 94, 0.1),
+                color: Color.rgba(225, 29, 72, 1.0),
+                raw: {'border-color': 'rgba(244, 63, 94, 0.3)'},
+              )
+            : Styles(
+                backgroundColor: Color.rgba(16, 185, 129, 0.1),
+                color: Color.rgba(4, 120, 87, 1.0),
+                raw: {'border-color': 'rgba(16, 185, 129, 0.3)'},
+              ),
+        [
+          div(
+            classes: 'w-4 h-4 shrink-0 mt-0.5',
+            [AppIcon(isDeactivating ? AppIcons.disputes : AppIcons.checkCircle)],
+          ),
+          div(classes: 'space-y-0.5 min-w-0 flex-1', [
+            h5(classes: 'font-bold text-xs', [
+              Component.text(
+                isDeactivating
+                    ? 'Deactivating Account: ${component.userName}'
+                    : 'Activating Account: ${component.userName}',
+              ),
+            ]),
+            p(classes: 'text-[11px] opacity-90 leading-snug', [
+              Component.text(
+                isDeactivating
+                    ? 'Deactivating this account will restrict the user from accessing platform features, requesting services, or managing tasks.'
+                    : 'Activating this account will restore full access to platform features and services.',
+              ),
+            ]),
+          ]),
+        ],
+      ),
+
+      // Error Banner
+      if (_errorMessage != null)
+        div(
+          classes:
+              'p-3 rounded-xl border flex items-center space-x-2 text-xs font-semibold animate-shake',
+          styles: Styles(
+            backgroundColor: Color.rgba(244, 63, 94, 0.1),
+            color: Color.rgba(225, 29, 72, 1.0),
+            raw: {'border-color': 'rgba(244, 63, 94, 0.3)'},
+          ),
+          [
+            const AppIcon(AppIcons.infoCircle),
+            span([Component.text(_errorMessage!)]),
+          ],
+        ),
+
+      // Reason / Notes Input Field
+      div(classes: 'space-y-1.5', [
+        label(
+          classes: 'block text-xs font-bold uppercase tracking-wider',
+          styles: Styles(color: Color(colorScheme.textMuted)),
+          [Component.text('Reason / Administrative Notes *')],
+        ),
+        textarea(
+          classes:
+              'w-full border rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all resize-none min-h-[100px]',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.inputBg),
+            color: Color(colorScheme.textPrimary),
+            raw: {'border-color': colorScheme.borderInput},
+          ),
+          attributes: {
+            'placeholder': isDeactivating
+                ? 'e.g. Violation of terms, suspicious account activity, requested by user...'
+                : 'e.g. Identity verification completed, issue resolved, manual admin override...',
+            'value': _reason,
+          },
+          onInput: (val) => setState(() {
+            _reason = val.toString();
+            _errorMessage = null;
+          }),
+          [],
+        ),
+      ]),
+
+      // Dialog Actions
+      div(
+        classes: 'flex items-center justify-end space-x-3 pt-4 border-t',
+        styles: Styles(raw: {'border-color': colorScheme.border}),
+        [
+          button(
+            type: ButtonType.button,
+            onClick: () => context.hideDialog(),
+            classes:
+                'px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer hover:opacity-80',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textSecondary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            [Component.text('Cancel')],
+          ),
+          button(
+            type: ButtonType.button,
+            onClick: () => _handleSubmit(context),
+            disabled: _isSubmitting,
+            classes: isDeactivating
+                ? 'px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md transition-all cursor-pointer border-none flex items-center space-x-2 bg-rose-600 hover:bg-rose-700 ${_isSubmitting ? 'opacity-60 cursor-not-allowed' : 'active:scale-95'}'
+                : 'px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md transition-all cursor-pointer border-none flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 ${_isSubmitting ? 'opacity-60 cursor-not-allowed' : 'active:scale-95'}',
+            [
+              if (_isSubmitting)
+                div(
+                  classes:
+                      'w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin',
+                  [],
+                )
+              else
+                AppIcon(isDeactivating ? AppIcons.disputes : AppIcons.checkCircle),
+              span([
+                Component.text(
+                  _isSubmitting
+                      ? (isDeactivating ? 'Deactivating...' : 'Activating...')
+                      : (isDeactivating ? 'Deactivate User' : 'Activate User'),
+                ),
+              ]),
+            ],
+          ),
+        ],
+      ),
+    ]);
   }
 }

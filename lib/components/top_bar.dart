@@ -2,6 +2,8 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
+import 'package:jaspr_router/jaspr_router.dart';
+
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
@@ -59,43 +61,47 @@ class TopBar extends StatelessComponent {
           // Calendar Icon Button
           button(
             type: ButtonType.button,
+            onClick: () {
+              Router.of(context).push('/interviews');
+            },
             classes:
-                'w-9 h-9 rounded-full border flex items-center justify-center transition-colors shadow-sm cursor-pointer',
+                'w-9 h-9 rounded-full border flex items-center justify-center transition-all shadow-sm cursor-pointer hover:opacity-80 active:scale-95',
             styles: Styles(
               backgroundColor: Color(colorScheme.surface),
               color: Color(colorScheme.textMuted),
               raw: {'border-color': colorScheme.border},
             ),
+            attributes: {'title': 'View Provider Interviews'},
             [
               const AppIcon(AppIcons.calendar),
             ],
           ),
 
           // Notification Bell Icon Button with Red Badge
-          button(
-            type: ButtonType.button,
-            classes:
-                'w-9 h-9 rounded-full border flex items-center justify-center transition-colors shadow-sm relative cursor-pointer',
-            styles: Styles(
-              backgroundColor: Color(colorScheme.surface),
-              color: Color(colorScheme.textMuted),
-              raw: {'border-color': colorScheme.border},
-            ),
-            [
-              const AppIcon(AppIcons.bell),
-              span(
-                classes:
-                    'absolute -top-0.5 -right-0.5 w-4 h-4 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2',
-                styles: Styles(
-                  backgroundColor: Color(colorScheme.primary),
-                  raw: {'border-color': colorScheme.surface},
-                ),
-                [
-                  Component.text('1'),
-                ],
-              ),
-            ],
-          ),
+          // button(
+          //   type: ButtonType.button,
+          //   classes:
+          //       'w-9 h-9 rounded-full border flex items-center justify-center transition-colors shadow-sm relative cursor-pointer',
+          //   styles: Styles(
+          //     backgroundColor: Color(colorScheme.surface),
+          //     color: Color(colorScheme.textMuted),
+          //     raw: {'border-color': colorScheme.border},
+          //   ),
+          //   [
+          //     const AppIcon(AppIcons.bell),
+          //     span(
+          //       classes:
+          //           'absolute -top-0.5 -right-0.5 w-4 h-4 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2',
+          //       styles: Styles(
+          //         backgroundColor: Color(colorScheme.primary),
+          //         raw: {'border-color': colorScheme.surface},
+          //       ),
+          //       [
+          //         Component.text('1'),
+          //       ],
+          //     ),
+          //   ],
+          // ),
 
           // User Profile Card / Shimmer Loading
           _buildUserProfile(context, colorScheme, adminUserAsync),

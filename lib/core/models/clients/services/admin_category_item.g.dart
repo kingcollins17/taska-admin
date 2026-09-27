@@ -12,6 +12,10 @@ AdminCategoryItem _$AdminCategoryItemFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String?,
       description: json['description'] as String?,
       imageUrl: json['image_url'] as String?,
+      defaultBasePrice: json['default_base_price'] as num?,
+      defaultDurationMin: (json['default_duration_min'] as num?)?.toInt(),
+      perKmRate: json['per_km_rate'] as num?,
+      perMinuteRate: json['per_minute_rate'] as num?,
       isActive: json['is_active'] as bool?,
       createdAt: json['created_at'] == null
           ? null
@@ -27,6 +31,10 @@ Map<String, dynamic> _$AdminCategoryItemToJson(AdminCategoryItem instance) =>
       'name': instance.name,
       'description': instance.description,
       'image_url': instance.imageUrl,
+      'default_base_price': instance.defaultBasePrice,
+      'default_duration_min': instance.defaultDurationMin,
+      'per_km_rate': instance.perKmRate,
+      'per_minute_rate': instance.perMinuteRate,
       'is_active': instance.isActive,
       'created_at': instance.createdAt?.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),

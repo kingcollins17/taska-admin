@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+import 'package:taska_admin/core/utils/currency_formatter.dart';
 
 import '../components/task_detail_side_panel.dart';
 import '../core/designs/app_icons.dart';
@@ -178,7 +179,7 @@ class _TasksTable extends StatefulComponent {
 }
 
 class _TasksTableState extends State<_TasksTable> {
-  String selectedStatus = '';
+  Set<String> selectedStatuses = {};
   String searchQuery = '';
   String _searchInputValue = '';
   Timer? _searchDebounceTimer;
@@ -218,7 +219,7 @@ class _TasksTableState extends State<_TasksTable> {
 
   String _formatCurrency(num? amount) {
     if (amount == null) return '₦0.00';
-    return '₦${amount.toStringAsFixed(2)}';
+    return amount.toNaira();
   }
 
   @override
@@ -229,7 +230,7 @@ class _TasksTableState extends State<_TasksTable> {
       listTasksProvider(
         ListTasksParams(
           search: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
-          status: selectedStatus.isEmpty ? null : [selectedStatus],
+          status: selectedStatuses.isEmpty ? null : selectedStatuses.toList(),
           sortBy: sortBy,
           sortDesc: sortDesc,
           page: currentPage,
@@ -245,10 +246,10 @@ class _TasksTableState extends State<_TasksTable> {
         raw: {'border-color': colorScheme.border},
       ),
       [
-        // Aligned Toolbar Filters (Search Left, Status Pills Right with smooth horizontal scrolling support)
-        div(classes: 'flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-1', [
-          // Search Input
-          div(classes: 'relative w-full lg:w-72 shrink-0', [
+        // Aligned Toolbar Filters (Search Top Row, Status Pills Dedicated Bottom Row)
+        div(classes: 'flex flex-col gap-3.5 pb-1', [
+          // Search Input Row
+          div(classes: 'relative w-full sm:w-80 shrink-0', [
             div(
               classes: 'absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none',
               styles: Styles(color: Color(colorScheme.placeholder)),
@@ -269,38 +270,48 @@ class _TasksTableState extends State<_TasksTable> {
             ),
           ]),
 
-          // Status Filter Pills (Horizontal scrollable inside available container space)
+          // Status Filter Pills Row (Dedicated row with wrapping)
           div(
-            classes:
-                'flex items-center gap-1.5 overflow-x-auto max-w-full min-w-0 flex-1 lg:justify-end py-1 no-scrollbar',
-            styles: Styles(raw: {
-              '-webkit-overflow-scrolling': 'touch',
-              'scrollbar-width': 'none',
-              'ms-overflow-style': 'none',
-            }),
+            classes: 'flex flex-wrap items-center gap-1.5 pt-1',
             [
               span(
                 classes: 'text-[11px] font-bold uppercase tracking-wider shrink-0 mr-1',
                 styles: Styles(color: Color(colorScheme.textMuted)),
-                [Component.text('Status:')],
+                [Component.text('Filter Status:')],
               ),
+              if (selectedStatuses.isNotEmpty)
+                button(
+                  onClick: () => setState(() {
+                    selectedStatuses.clear();
+                    currentPage = 1;
+                  }),
+                  classes:
+                      'px-2 py-1 rounded-lg transition-all cursor-pointer text-[10.5px] font-bold text-rose-500 hover:underline shrink-0 whitespace-nowrap border-none bg-transparent',
+                  [Component.text('Clear Statuses')],
+                ),
               for (final status in [
-                '',
                 'DRAFT',
+                'UNDER_REVIEW',
+                'OPEN',
                 'SEARCHING',
                 'ASSIGNED',
                 'IN_PROGRESS',
                 'COMPLETED',
-                'CANCELLED'
+                'CANCELLED',
+                'NO_MATCH',
               ])
                 button(
                   onClick: () => setState(() {
-                    selectedStatus = status;
+                    if (selectedStatuses.contains(status)) {
+                      selectedStatuses.remove(status);
+                    } else {
+                      selectedStatuses.add(status);
+                    }
                     currentPage = 1;
                   }),
                   classes:
-                      'px-3 py-1.5 rounded-lg transition-all cursor-pointer text-[11px] font-bold border shrink-0 whitespace-nowrap',
-                  styles: selectedStatus == status
+                      'px-2.5 py-1 rounded-lg transition-all cursor-pointer text-[11px] font-bold border shrink-0 whitespace-nowrap flex items-center space-x-1 active:scale-95',
+                  styles: selectedStatuses.contains(status)
                       ? Styles(
                           backgroundColor: Color(colorScheme.primary),
                           color: Color('#FFFFFF'),
@@ -311,7 +322,10 @@ class _TasksTableState extends State<_TasksTable> {
                           color: Color(colorScheme.textSecondary),
                           raw: {'border-color': colorScheme.borderInput},
                         ),
-                  [Component.text(status.isEmpty ? 'All' : status.replaceAll('_', ' '))],
+                  [
+                    span(classes: 'text-[10px]', [Component.text(selectedStatuses.contains(status) ? '✓' : '+')]),
+                    span([Component.text(status.replaceAll('_', ' '))]),
+                  ],
                 ),
             ],
           ),
@@ -333,7 +347,7 @@ class _TasksTableState extends State<_TasksTable> {
                   _searchInputValue = '';
                   setState(() {
                     searchQuery = '';
-                    selectedStatus = '';
+                    selectedStatuses.clear();
                     currentPage = 1;
                   });
                 },
@@ -508,18 +522,21 @@ class _StatusPill extends StatelessComponent {
         break;
       case 'IN_PROGRESS':
       case 'ASSIGNED':
+      case 'OPEN':
         bg = isDark ? Color.rgba(59, 130, 246, 0.18) : Color.rgba(59, 130, 246, 0.1);
         fg = isDark ? Color.rgba(147, 197, 253, 1.0) : Color.rgba(29, 78, 216, 1.0);
         border = isDark ? 'rgba(59, 130, 246, 0.4)' : 'rgba(59, 130, 246, 0.25)';
         break;
       case 'CANCELLED':
       case 'EXPIRED':
+      case 'NO_MATCH':
         bg = isDark ? Color.rgba(244, 63, 94, 0.18) : Color.rgba(244, 63, 94, 0.1);
         fg = isDark ? Color.rgba(253, 164, 175, 1.0) : Color.rgba(190, 18, 60, 1.0);
         border = isDark ? 'rgba(244, 63, 94, 0.4)' : 'rgba(244, 63, 94, 0.25)';
         break;
       case 'SEARCHING':
       case 'POSTED':
+      case 'UNDER_REVIEW':
         bg = isDark ? Color.rgba(245, 158, 11, 0.18) : Color.rgba(245, 158, 11, 0.1);
         fg = isDark ? Color.rgba(252, 211, 77, 1.0) : Color.rgba(180, 83, 9, 1.0);
         border = isDark ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.25)';

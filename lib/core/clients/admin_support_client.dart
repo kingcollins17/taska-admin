@@ -8,6 +8,7 @@ import '../models/clients/support/admin_add_support_internal_note_body.dart';
 import '../models/clients/support/admin_assign_support_case_body.dart';
 import '../models/clients/support/admin_resolve_support_case_body.dart';
 import '../models/clients/support/admin_send_support_message_body.dart';
+import '../models/clients/support/admin_support_attachment_item.dart';
 import '../models/clients/support/admin_support_case_detail.dart';
 import '../models/clients/support/admin_support_case_item.dart';
 import '../models/clients/support/admin_support_message_item.dart';
@@ -90,6 +91,13 @@ abstract class AdminSupportClient {
     @Path('case_id') String caseId,
     @Body() AdminAssignSupportCaseBody body,
   );
+
+  @GET('/admin/support/cases/{case_id}/attachments')
+  Future<BaseApiResponse<PaginatedData<AdminSupportAttachmentItem>>> getAttachments(
+    @Path('case_id') String caseId, {
+    @Query('page') int? page,
+    @Query('per_page') int? perPage,
+  });
 
   @POST('/admin/support/cases/{case_id}/attachments')
   @MultiPart()

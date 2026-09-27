@@ -389,6 +389,52 @@ class _AdminSupportClient implements AdminSupportClient {
   }
 
   @override
+  Future<BaseApiResponse<PaginatedData<AdminSupportAttachmentItem>>>
+  getAttachments(String caseId, {int? page, int? perPage}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'page': page,
+      r'per_page': perPage,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{};
+    const Map<String, dynamic>? _data = null;
+    final _options =
+        _setStreamType<
+          BaseApiResponse<PaginatedData<AdminSupportAttachmentItem>>
+        >(
+          Options(method: 'GET', headers: _headers, extra: _extra)
+              .compose(
+                _dio.options,
+                '/admin/support/cases/${caseId}/attachments',
+                queryParameters: queryParameters,
+                data: _data,
+              )
+              .copyWith(
+                baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl),
+              ),
+        );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late BaseApiResponse<PaginatedData<AdminSupportAttachmentItem>> _value;
+    try {
+      _value =
+          BaseApiResponse<PaginatedData<AdminSupportAttachmentItem>>.fromJson(
+            _result.data!,
+            (json) => PaginatedData<AdminSupportAttachmentItem>.fromJson(
+              json as Map<String, dynamic>,
+              (json) => AdminSupportAttachmentItem.fromJson(
+                json as Map<String, dynamic>,
+              ),
+            ),
+          );
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<BaseApiResponse<dynamic>> uploadAttachment(
     String caseId,
     MultipartFile file,

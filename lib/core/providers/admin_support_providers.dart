@@ -9,6 +9,7 @@ import '../models/clients/support/admin_add_support_internal_note_body.dart';
 import '../models/clients/support/admin_assign_support_case_body.dart';
 import '../models/clients/support/admin_resolve_support_case_body.dart';
 import '../models/clients/support/admin_send_support_message_body.dart';
+import '../models/clients/support/admin_support_attachment_item.dart';
 import '../models/clients/support/admin_support_case_detail.dart';
 import '../models/clients/support/admin_support_case_item.dart';
 import '../models/clients/support/admin_support_message_item.dart';
@@ -48,6 +49,7 @@ class GetAdminSupportCasesParams {
           runtimeType == other.runtimeType &&
           page == other.page &&
           perPage == other.perPage &&
+          _listEquals(status, other.status) &&
           priority == other.priority &&
           type == other.type &&
           assignedAgentId == other.assignedAgentId &&
@@ -56,10 +58,20 @@ class GetAdminSupportCasesParams {
           taskId == other.taskId &&
           search == other.search;
 
+  static bool _listEquals(List<String>? a, List<String>? b) {
+    if (a == null) return b == null;
+    if (b == null || a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
   @override
-  int get hashCode => Object.hashAll([
+  int get hashCode => Object.hash(
         page,
         perPage,
+        Object.hashAll(status ?? []),
         priority,
         type,
         assignedAgentId,
@@ -67,7 +79,7 @@ class GetAdminSupportCasesParams {
         providerId,
         taskId,
         search,
-      ]);
+      );
 }
 
 final adminSupportCasesProvider =
@@ -181,6 +193,43 @@ final adminSupportTimelineProvider =
   (ref, params) async {
     final client = ref.watch(adminSupportClientProvider);
     final response = await client.getTimeline(
+      params.caseId,
+      page: params.page,
+      perPage: params.perPage,
+    );
+    return response.data;
+  },
+);
+
+class GetAdminSupportAttachmentsParams {
+  final String caseId;
+  final int? page;
+  final int? perPage;
+
+  const GetAdminSupportAttachmentsParams({
+    required this.caseId,
+    this.page,
+    this.perPage,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetAdminSupportAttachmentsParams &&
+          runtimeType == other.runtimeType &&
+          caseId == other.caseId &&
+          page == other.page &&
+          perPage == other.perPage;
+
+  @override
+  int get hashCode => Object.hash(caseId, page, perPage);
+}
+
+final adminSupportAttachmentsProvider =
+    FutureProvider.family<PaginatedData<AdminSupportAttachmentItem>?, GetAdminSupportAttachmentsParams>(
+  (ref, params) async {
+    final client = ref.watch(adminSupportClientProvider);
+    final response = await client.getAttachments(
       params.caseId,
       page: params.page,
       perPage: params.perPage,
@@ -332,6 +381,7 @@ class AdminSupportManagement extends AsyncNotifier<void> {
       if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
         state = const AsyncData(null);
         ref.invalidate(adminSupportMessagesProvider(GetAdminSupportMessagesParams(caseId: caseId)));
+        ref.invalidate(adminSupportAttachmentsProvider(GetAdminSupportAttachmentsParams(caseId: caseId)));
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to upload attachment';

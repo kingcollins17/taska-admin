@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+import 'package:taska_admin/core/utils/currency_formatter.dart';
 
 import '../components/category_detail_side_panel.dart';
 import '../components/create_category_dialog.dart';
@@ -363,7 +364,7 @@ class _ServicesTableState extends State<_ServicesTable> {
               classes: 'overflow-x-auto rounded-xl border transition-colors',
               styles: Styles(raw: {'border-color': colorScheme.border}),
               [
-                table(classes: 'w-full min-w-[900px] text-left border-collapse text-xs', [
+                table(classes: 'w-full min-w-[1050px] text-left border-collapse text-xs', [
                   thead(
                     classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
                     styles: Styles(
@@ -375,7 +376,10 @@ class _ServicesTableState extends State<_ServicesTable> {
                       tr([
                         th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Service')]),
                         th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Category')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Base Price')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Duration')]),
                         th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Take Rate')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Tier / Risk')]),
                         th(classes: 'p-3.5 text-center whitespace-nowrap', [Component.text('Status')]),
                         th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Created At')]),
                         th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
@@ -418,9 +422,17 @@ class _ServicesTableState extends State<_ServicesTable> {
                                   ),
                                 div([
                                   div(
-                                    classes: 'font-bold text-xs',
+                                    classes: 'font-bold text-xs flex items-center space-x-1.5',
                                     styles: Styles(color: Color(colorScheme.textHeading)),
-                                    [Component.text(service.name ?? 'Unnamed Service')],
+                                    [
+                                      span([Component.text(service.name ?? 'Unnamed Service')]),
+                                      if (service.isHighRisk == true)
+                                        span(
+                                          classes:
+                                              'px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30',
+                                          [Component.text('High Risk')],
+                                        ),
+                                    ],
                                   ),
                                   div(
                                     classes: 'text-[10.5px] font-mono',
@@ -436,11 +448,29 @@ class _ServicesTableState extends State<_ServicesTable> {
                               styles: Styles(color: Color(colorScheme.textSecondary)),
                               [Component.text(service.category?.name ?? service.categoryId ?? '—')],
                             ),
+                            // Base Price
+                            td(
+                              classes: 'p-3.5 font-mono text-xs font-semibold whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.textPrimary)),
+                              [Component.text((service.basePrice ?? 0).toNaira())],
+                            ),
+                            // Duration
+                            td(
+                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.textSecondary)),
+                              [Component.text('${service.defaultDurationMin ?? 60}m')],
+                            ),
                             // Take Rate
                             td(
                               classes: 'p-3.5 font-mono font-bold text-xs whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.primary)),
                               [Component.text(_formatTakeRate(service.takeRate))],
+                            ),
+                            // Tier / Risk
+                            td(
+                              classes: 'p-3.5 text-xs font-semibold whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.textSecondary)),
+                              [Component.text('Tier ${service.minTierRequired ?? 4}')],
                             ),
                             // Status
                             td(
@@ -657,7 +687,7 @@ class _CategoriesTableState extends State<_CategoriesTable> {
               classes: 'overflow-x-auto rounded-xl border transition-colors',
               styles: Styles(raw: {'border-color': colorScheme.border}),
               [
-                table(classes: 'w-full min-w-[850px] text-left border-collapse text-xs', [
+                table(classes: 'w-full min-w-[950px] text-left border-collapse text-xs', [
                   thead(
                     classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
                     styles: Styles(
@@ -669,6 +699,8 @@ class _CategoriesTableState extends State<_CategoriesTable> {
                       tr([
                         th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Category')]),
                         th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Description')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Default Price')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Default Duration')]),
                         th(classes: 'p-3.5 text-center whitespace-nowrap', [Component.text('Status')]),
                         th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Created At')]),
                         th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
@@ -728,6 +760,18 @@ class _CategoriesTableState extends State<_CategoriesTable> {
                               classes: 'p-3.5 text-xs max-w-xs truncate whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
                               [Component.text(category.description ?? '—')],
+                            ),
+                            // Default Price
+                            td(
+                              classes: 'p-3.5 font-mono text-xs font-semibold whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.textPrimary)),
+                              [Component.text((category.defaultBasePrice ?? 0).toNaira())],
+                            ),
+                            // Default Duration
+                            td(
+                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.textSecondary)),
+                              [Component.text('${category.defaultDurationMin ?? 60}m')],
                             ),
                             // Status
                             td(
