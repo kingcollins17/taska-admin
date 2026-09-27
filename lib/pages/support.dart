@@ -91,7 +91,7 @@ class _SupportTableState extends State<_SupportTable> {
   final List<String> allStatusOptions = [
     'OPEN',
     'IN_PROGRESS',
-    'WAITING_FOR_USER',
+    'WAITING_FOR_CUSTOMER',
     'WAITING_FOR_PROVIDER',
     'WAITING_FOR_INTERNAL',
     'RESOLVED',
@@ -644,7 +644,7 @@ class _StatusPill extends StatelessComponent {
         text = 'text-emerald-600 dark:text-emerald-400';
         border = 'border-emerald-200/50 dark:border-emerald-800/50';
         break;
-      case 'WAITING_FOR_USER':
+      case 'WAITING_FOR_CUSTOMER':
       case 'WAITING_FOR_PROVIDER':
       case 'WAITING_FOR_INTERNAL':
         bg = 'bg-sky-50 dark:bg-sky-950/60';

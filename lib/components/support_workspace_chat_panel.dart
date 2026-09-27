@@ -310,22 +310,64 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
         ),
 
         // ── Bottom Message Composer ───────────────────────────
-        div(
-          classes: 'border-t shrink-0 transition-colors',
-          styles: Styles(
-            backgroundColor: Color(colorScheme.surface),
-            raw: {'border-color': colorScheme.border},
-          ),
-          [
-            // Channel & Visibility selector row
-            div(
-              classes: 'px-4 py-2.5 sm:px-5 sm:py-3 flex flex-wrap items-center justify-between gap-3 border-b transition-colors',
-              styles: Styles(raw: {'border-color': colorScheme.border}),
-              [
-                div(classes: 'flex items-center space-x-2.5', [
-                  // Channel Badge (In-App) with dot indicator
+        if (caseDetail?.status?.toUpperCase() == 'CLOSED' || caseDetail?.status?.toUpperCase() == 'AUTO_CLOSED')
+          div(
+            classes: 'p-4 border-t flex items-center justify-center space-x-2 shrink-0 transition-colors',
+            styles: Styles(
+              backgroundColor: colorScheme.isDark ? Color.rgba(30, 41, 59, 0.6) : Color.rgba(241, 245, 249, 0.9),
+              raw: {'border-color': colorScheme.border},
+            ),
+            [
+              div(classes: 'w-4 h-4 text-slate-400 shrink-0', [const AppIcon(AppIcons.documents)]),
+              span(
+                classes: 'text-xs font-bold text-slate-500 dark:text-slate-400',
+                [Component.text('This ticket is CLOSED. Reopen status to send replies or internal notes.')],
+              ),
+            ],
+          )
+        else
+          div(
+            classes: 'border-t shrink-0 transition-colors',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.surface),
+              raw: {'border-color': colorScheme.border},
+            ),
+            [
+              // Mode Switcher Bar (Public Reply vs Internal Note)
+              div(
+                classes: 'px-4 py-2 border-b flex items-center justify-between gap-3 transition-colors',
+                styles: Styles(raw: {'border-color': colorScheme.border}),
+                [
+                  div(classes: 'flex items-center space-x-1.5 p-1 rounded-xl border bg-slate-100 dark:bg-slate-800/60 shadow-2xs', [
+                    button(
+                      type: ButtonType.button,
+                      onClick: () => setState(() => visibility = 'PUBLIC'),
+                      classes: 'px-3 py-1 rounded-lg text-[11px] font-bold transition-all border-none cursor-pointer flex items-center space-x-1.5',
+                      styles: Styles(
+                        backgroundColor: visibility == 'PUBLIC' ? Color(colorScheme.primary) : Color('transparent'),
+                        color: visibility == 'PUBLIC' ? Color('#FFFFFF') : Color(colorScheme.textMuted),
+                      ),
+                      [
+                        span([Component.text('💬 Public Reply')]),
+                      ],
+                    ),
+                    button(
+                      type: ButtonType.button,
+                      onClick: () => setState(() => visibility = 'INTERNAL'),
+                      classes: 'px-3 py-1 rounded-lg text-[11px] font-bold transition-all border-none cursor-pointer flex items-center space-x-1.5',
+                      styles: Styles(
+                        backgroundColor: visibility == 'INTERNAL' ? Color('#F59E0B') : Color('transparent'),
+                        color: visibility == 'INTERNAL' ? Color('#FFFFFF') : Color(colorScheme.textMuted),
+                      ),
+                      [
+                        span([Component.text('🔒 Internal Note')]),
+                      ],
+                    ),
+                  ]),
+
+                  // Channel indicator pill
                   div(
-                    classes: 'inline-flex items-center space-x-1.5 border rounded-full px-3 py-1 text-[11px] font-bold shadow-2xs transition-all',
+                    classes: 'hidden sm:inline-flex items-center space-x-1.5 border rounded-full px-3 py-1 text-[10.5px] font-bold shadow-2xs',
                     styles: Styles(
                       backgroundColor: Color(colorScheme.inputBg),
                       color: Color(colorScheme.textPrimary),
@@ -333,125 +375,65 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
                     ),
                     [
                       span(classes: 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse', []),
-                      span([Component.text('In-App Channel')]),
+                      span([Component.text('In-App Support Channel')]),
                     ],
                   ),
+                ],
+              ),
 
-                  // From Agent label
-                  div(
-                    classes: 'inline-flex items-center space-x-1 text-[11px] font-medium px-2.5 py-1 rounded-full border',
-                    styles: Styles(
-                      backgroundColor: Color(colorScheme.surface),
-                      color: Color(colorScheme.textMuted),
-                      raw: {'border-color': colorScheme.borderInput},
-                    ),
-                    [
-                      span([Component.text('From:')]),
-                      span(
-                        classes: 'font-bold',
-                        styles: Styles(color: Color(colorScheme.textPrimary)),
-                        [Component.text('Agent')],
-                      ),
-                    ],
-                  ),
-                ]),
-
-                // Visibility Selector
-                div(classes: 'flex items-center space-x-2', [
-                  span(
-                    classes: 'text-[11px] font-semibold hidden sm:inline-block',
-                    styles: Styles(color: Color(colorScheme.textMuted)),
-                    [Component.text('Visibility:')],
-                  ),
-                  div(classes: 'relative inline-block', [
-                    select(
-                      classes: 'appearance-none border rounded-xl px-3.5 py-1.5 pr-8 text-[11px] font-bold focus:outline-none transition-all cursor-pointer shadow-2xs',
-                      styles: Styles(
-                        backgroundColor: visibility == 'INTERNAL' ? Color('#F59E0B') : Color(colorScheme.inputBg),
-                        color: visibility == 'INTERNAL' ? Color('#FFFFFF') : Color(colorScheme.textPrimary),
-                        raw: {
-                          'border-color': visibility == 'INTERNAL' ? '#F59E0B' : colorScheme.borderInput,
-                        },
-                      ),
-                      events: {
-                        'change': (e) {
-                          final val = (e.target as web.HTMLSelectElement).value;
-                          setState(() => visibility = val);
-                        },
+              // Input field area: Textarea + Send button side-by-side with identical height
+              div(classes: 'p-3.5 sm:p-4', [
+                div(classes: 'flex items-center space-x-2.5', [
+                  // Textarea Message Input
+                  div(classes: 'flex-1 relative', [
+                    textarea(
+                      classes: 'w-full h-12 border rounded-2xl px-4 py-3 text-xs font-medium focus:outline-none focus:ring-2 transition-all resize-none leading-normal',
+                      styles: visibility == 'INTERNAL'
+                          ? Styles(
+                              backgroundColor: Color.rgba(245, 158, 11, 0.08),
+                              color: Color(colorScheme.textPrimary),
+                              raw: {'border-color': '#F59E0B'},
+                            )
+                          : Styles(
+                              backgroundColor: Color(colorScheme.inputBg),
+                              color: Color(colorScheme.textPrimary),
+                              raw: {'border-color': colorScheme.borderInput},
+                            ),
+                      attributes: {
+                        'id': 'chat-message-input',
+                        'placeholder': visibility == 'INTERNAL'
+                            ? 'Write an internal note (only visible to support agents)...'
+                            : 'Type public response to customer...',
+                        'rows': '1',
                       },
-                      [
-                        option(value: 'PUBLIC', selected: visibility == 'PUBLIC', [Component.text('PUBLIC (Customer)')]),
-                        option(value: 'INTERNAL', selected: visibility == 'INTERNAL', [Component.text('INTERNAL (Admins Only)')]),
-                        option(value: 'CUSTOMER_ONLY', selected: visibility == 'CUSTOMER_ONLY', [Component.text('CUSTOMER_ONLY')]),
-                        option(value: 'PROVIDER_ONLY', selected: visibility == 'PROVIDER_ONLY', [Component.text('PROVIDER_ONLY')]),
-                      ],
-                    ),
-                    div(
-                      classes: 'pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5',
-                      styles: Styles(
-                        color: visibility == 'INTERNAL' ? Color('#FFFFFF') : Color(colorScheme.textMuted),
-                      ),
-                      [
-                        RawText('<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>'),
-                      ],
+                      onInput: _onMessageInput,
+                      [Component.text(messageText)],
                     ),
                   ]),
-                ]),
-              ],
-            ),
 
-            // Input field area: Textarea + Send button side-by-side
-            div(classes: 'p-3.5 sm:p-4', [
-              div(classes: 'flex items-end space-x-2.5', [
-                // Textarea Message Input
-                div(classes: 'flex-1 relative', [
-                  textarea(
-                    classes: 'w-full border rounded-2xl p-3.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all resize-none min-h-[52px] max-h-[140px] leading-relaxed',
-                    styles: visibility == 'INTERNAL'
-                        ? Styles(
-                            backgroundColor: Color.rgba(245, 158, 11, 0.06),
-                            color: Color(colorScheme.textPrimary),
-                            raw: {'border-color': '#F59E0B'},
-                          )
-                        : Styles(
-                            backgroundColor: Color(colorScheme.inputBg),
-                            color: Color(colorScheme.textPrimary),
-                            raw: {'border-color': colorScheme.borderInput},
-                          ),
-                    attributes: {
-                      'id': 'chat-message-input',
-                      'placeholder': visibility == 'INTERNAL' ? 'Type internal note for admins only...' : 'Type message here...',
-                      'rows': '2',
-                    },
-                    onInput: _onMessageInput,
-                    [Component.text(messageText)],
-                  ),
-                ]),
-
-                // Send button beside input field on the same line
-                button(
-                  type: ButtonType.button,
-                  onClick: () => _handleSend(context),
-                  disabled: isSending || messageText.trim().isEmpty,
-                  classes: 'h-[52px] px-4 sm:px-5 rounded-2xl text-white font-bold text-xs shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center space-x-2 shrink-0 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed border-none',
-                  styles: Styles(
-                    backgroundColor: Color(visibility == 'INTERNAL' ? '#F59E0B' : colorScheme.primary),
-                  ),
-                  [
-                    if (isSending)
-                      span(classes: 'text-xs font-bold tracking-wide', [Component.text('Sending...')])
-                    else ...[
-                      span(classes: 'hidden sm:inline font-bold tracking-wide text-xs', [
-                        Component.text(visibility == 'INTERNAL' ? 'Add Note' : 'Send'),
-                      ]),
-                      RawText('<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19V5m0 0l-7 7m7-7l7 7" transform="rotate(45 12 12)"></path></svg>'),
+                  // Send button beside input field with matching h-12 height
+                  button(
+                    type: ButtonType.button,
+                    onClick: () => _handleSend(context),
+                    disabled: isSending || messageText.trim().isEmpty,
+                    classes: 'h-12 px-5 sm:px-6 rounded-2xl text-white font-extrabold text-xs shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center space-x-2 shrink-0 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed border-none',
+                    styles: Styles(
+                      backgroundColor: Color(visibility == 'INTERNAL' ? '#F59E0B' : colorScheme.primary),
+                    ),
+                    [
+                      if (isSending)
+                        span(classes: 'text-xs font-bold tracking-wide', [Component.text('Sending...')])
+                      else ...[
+                        span(classes: 'hidden sm:inline font-bold tracking-wide text-xs', [
+                          Component.text(visibility == 'INTERNAL' ? 'Save Note' : 'Send Reply'),
+                        ]),
+                        RawText('<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19V5m0 0l-7 7m7-7l7 7" transform="rotate(45 12 12)"></path></svg>'),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+                ]),
               ]),
             ]),
-          ],
-        ),
       ],
     );
   }

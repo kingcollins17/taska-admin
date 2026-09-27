@@ -182,7 +182,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                   classes: 'overflow-x-auto rounded-xl border transition-colors',
                   styles: Styles(raw: {'border-color': colorScheme.border}),
                   [
-                    table(classes: 'w-full text-left border-collapse text-xs', [
+                    table(classes: 'w-full min-w-[900px] text-left border-collapse text-xs', [
                       thead(
                         classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
                         styles: Styles(
@@ -192,12 +192,12 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                         ),
                         [
                           tr([
-                            th(classes: 'p-3.5 pl-4', [Component.text('Action')]),
-                            th(classes: 'p-3.5', [Component.text('Resource')]),
-                            th(classes: 'p-3.5', [Component.text('Admin Actor')]),
-                            th(classes: 'p-3.5', [Component.text('Reason / Notes')]),
-                            th(classes: 'p-3.5', [Component.text('Timestamp')]),
-                            th(classes: 'p-3.5 pr-4 text-center', [Component.text('Actions')]),
+                            th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Action')]),
+                            th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Resource')]),
+                            th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Admin Actor')]),
+                            th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Reason / Notes')]),
+                            th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Timestamp')]),
+                            th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
                           ]),
                         ],
                       ),
@@ -210,10 +210,14 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                         [
                           for (final log in items)
                             tr(
+                              classes: 'hover:opacity-90 transition-colors cursor-pointer',
+                              events: {
+                                'click': (_) => AuditLogDetailSidePanel.show(context, log),
+                              },
                               [
                                 // Action Badge
                                 td(
-                                  classes: 'p-3.5 pl-4',
+                                  classes: 'p-3.5 pl-4 whitespace-nowrap',
                                   [
                                     div(classes: 'flex items-center space-x-2.5', [
                                       div(
@@ -230,16 +234,16 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                                   ],
                                 ),
                                 // Resource Type & ID
-                                td(classes: 'p-3.5', [
+                                td(classes: 'p-3.5 whitespace-nowrap', [
                                   div(classes: 'flex flex-col space-y-0.5', [
                                     span(
-                                      classes: 'font-bold text-xs uppercase tracking-tight',
+                                      classes: 'font-bold text-xs uppercase tracking-tight whitespace-nowrap',
                                       styles: Styles(color: Color(colorScheme.textHeading)),
                                       [Component.text(log.resourceType ?? 'N/A')],
                                     ),
                                     if (log.resourceId != null && log.resourceId!.isNotEmpty)
                                       span(
-                                        classes: 'text-[10.5px] font-mono font-medium truncate max-w-xs',
+                                        classes: 'text-[10.5px] font-mono font-medium truncate max-w-xs whitespace-nowrap',
                                         styles: Styles(color: Color(colorScheme.textMuted)),
                                         [Component.text('#${log.resourceId}')],
                                       ),
@@ -247,37 +251,33 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                                 ]),
                                 // Admin Actor ID
                                 td(
-                                  classes: 'p-3.5 font-mono text-[11px]',
+                                  classes: 'p-3.5 font-mono text-[11px] whitespace-nowrap',
                                   styles: Styles(color: Color(colorScheme.textSecondary)),
                                   [Component.text(log.adminId ?? 'System')],
                                 ),
                                 // Reason
                                 td(
-                                  classes: 'p-3.5 text-xs max-w-xs truncate',
+                                  classes: 'p-3.5 text-xs max-w-xs truncate whitespace-nowrap',
                                   styles: Styles(color: Color(colorScheme.textSecondary)),
                                   [Component.text(log.reason ?? '—')],
                                 ),
                                 // Timestamp
                                 td(
-                                  classes: 'p-3.5 text-xs font-medium shrink-0',
+                                  classes: 'p-3.5 text-xs font-medium whitespace-nowrap shrink-0',
                                   styles: Styles(color: Color(colorScheme.textMuted)),
                                   [Component.text(_formatDateTime(log.createdAt))],
                                 ),
                                 // Action Button
-                                td(classes: 'p-3.5 pr-4 text-center', [
+                                td(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [
                                   button(
                                     onClick: () => AuditLogDetailSidePanel.show(context, log),
                                     classes:
-                                        'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all border-none',
+                                        'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all border-none whitespace-nowrap shrink-0',
                                     styles: Styles(backgroundColor: Color(colorScheme.primary)),
                                     [Component.text('View')],
                                   ),
                                 ]),
                               ],
-                              classes: 'hover:opacity-90 transition-colors cursor-pointer',
-                              events: {
-                                'click': (_) => AuditLogDetailSidePanel.show(context, log),
-                              },
                             ),
                         ],
                       ),
@@ -343,7 +343,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
     return span(
       classes:
-          'px-2.5 py-1 rounded-lg text-[10.5px] font-black tracking-wider uppercase border font-mono',
+          'px-2.5 py-1 rounded-lg text-[10.5px] font-black tracking-wider uppercase border font-mono whitespace-nowrap',
       styles: Styles(
         backgroundColor: bg,
         color: fg,

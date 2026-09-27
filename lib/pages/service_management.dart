@@ -4,18 +4,21 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
-import '../components/admin_detail_side_panel.dart';
-import '../components/invite_admin_dialog.dart';
-import '../components/invite_detail_side_panel.dart';
+import '../components/category_detail_side_panel.dart';
+import '../components/create_category_dialog.dart';
+import '../components/create_service_dialog.dart';
+import '../components/service_detail_side_panel.dart';
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
-import '../core/providers/admin_management_providers.dart';
+import '../core/models/clients/services/admin_category_item.dart';
+import '../core/models/clients/services/admin_service_item.dart';
+import '../core/providers/admin_service_manager_providers.dart';
 import '../core/providers/ui_state_provider.dart';
 
 @client
-class AdministratorsPage extends StatelessComponent {
-  const AdministratorsPage({super.key});
+class ServiceManagementPage extends StatelessComponent {
+  const ServiceManagementPage({super.key});
 
   @override
   Component build(BuildContext context) {
@@ -44,7 +47,7 @@ class _Header extends StatelessComponent {
           styles: Styles(color: Color(colorScheme.textSecondary)),
           [
             Component.text(
-              'Manage administrator accounts, roles, invitations, and access permissions.',
+              'Manage catalog services, categories, take rates, active availability, and service structures.',
             ),
           ],
         ),
@@ -54,7 +57,7 @@ class _Header extends StatelessComponent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Tabbed Content
+// Tabbed Content Container
 // ─────────────────────────────────────────────────────────────
 
 class _TabbedContent extends StatefulComponent {
@@ -65,7 +68,7 @@ class _TabbedContent extends StatefulComponent {
 }
 
 class _TabbedContentState extends State<_TabbedContent> {
-  int activeTab = 0; // 0 = Admins, 1 = Invitations
+  int activeTab = 0; // 0 = Services, 1 = Categories
 
   @override
   Component build(BuildContext context) {
@@ -78,21 +81,21 @@ class _TabbedContentState extends State<_TabbedContent> {
         raw: {'border-color': colorScheme.border},
       ),
       [
-        // Tab Bar
+        // Tab Bar Header
         div(
           classes: 'flex items-center border-b px-1.5 pt-1.5',
           styles: Styles(raw: {'border-color': colorScheme.border}),
           [
             _TabButton(
-              label: 'Administrators',
-              icon: AppIcons.administrators,
+              label: 'Services',
+              icon: AppIcons.services,
               isActive: activeTab == 0,
               colorScheme: colorScheme,
               onTap: () => setState(() => activeTab = 0),
             ),
             _TabButton(
-              label: 'Invitations',
-              icon: AppIcons.externalLink,
+              label: 'Categories',
+              icon: AppIcons.overview,
               isActive: activeTab == 1,
               colorScheme: colorScheme,
               onTap: () => setState(() => activeTab = 1),
@@ -102,13 +105,13 @@ class _TabbedContentState extends State<_TabbedContent> {
 
         // Tab Content
         div(
-          key: Key(activeTab == 0 ? 'admins-tab' : 'invitations-tab'),
+          key: Key(activeTab == 0 ? 'services-tab' : 'categories-tab'),
           classes: 'p-5 sm:p-6 animate-fade-in-scaled',
           [
             if (activeTab == 0)
-              const _AdminsTable()
+              const _ServicesTable()
             else
-              const _InvitationsTable(),
+              const _CategoriesTable(),
           ],
         ),
       ],
@@ -153,20 +156,22 @@ class _TabButton extends StatelessComponent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Admins Table Tab
+// Tab 1: Services List Table Component
 // ─────────────────────────────────────────────────────────────
 
-class _AdminsTable extends StatefulComponent {
-  const _AdminsTable();
+class _ServicesTable extends StatefulComponent {
+  const _ServicesTable();
 
   @override
-  State<_AdminsTable> createState() => _AdminsTableState();
+  State<_ServicesTable> createState() => _ServicesTableState();
 }
 
-class _AdminsTableState extends State<_AdminsTable> {
+class _ServicesTableState extends State<_ServicesTable> {
   String searchQuery = '';
   String _searchInputValue = '';
   Timer? _searchDebounceTimer;
+  String? selectedStatus; // null = All, 'active' = true, 'inactive' = false
+  String? selectedCategoryId; // null = All Categories
   int currentPage = 1;
 
   @override
@@ -178,7 +183,7 @@ class _AdminsTableState extends State<_AdminsTable> {
   void _onSearchInput(dynamic value) {
     _searchInputValue = value.toString();
     _searchDebounceTimer?.cancel();
-    _searchDebounceTimer = Timer(const Duration(seconds: 2), () {
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       setState(() {
         searchQuery = _searchInputValue;
         currentPage = 1;
@@ -186,13 +191,48 @@ class _AdminsTableState extends State<_AdminsTable> {
     });
   }
 
+  bool? get _isActiveFilter {
+    if (selectedStatus == 'active') return true;
+    if (selectedStatus == 'inactive') return false;
+    return null;
+  }
+
+  String? _cleanCategoryId(dynamic input) {
+    if (input == null) return null;
+    String str;
+    if (input is List) {
+      if (input.isEmpty) return null;
+      str = input.first.toString();
+    } else {
+      str = input.toString();
+    }
+    str = str.trim();
+    if (str.startsWith('[') && str.endsWith(']')) {
+      str = str.substring(1, str.length - 1).trim();
+    }
+    return str.isEmpty ? null : str;
+  }
+
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final adminsAsync = context.watch(
-      listAdminsProvider(
-        ListAdminsParams(
-          email: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
+    final categoriesAsync = context.watch(
+      adminCategoriesProvider(const ListCategoriesParams(perPage: 100)),
+    );
+    final categoriesList = categoriesAsync.when(
+      data: (data) => data?.items ?? <AdminCategoryItem>[],
+      loading: () => <AdminCategoryItem>[],
+      error: (_, __) => <AdminCategoryItem>[],
+    );
+
+    final cleanCatId = _cleanCategoryId(selectedCategoryId);
+
+    final servicesAsync = context.watch(
+      adminServicesProvider(
+        ListServicesParams(
+          search: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
+          categoryId: cleanCatId,
+          isActive: _isActiveFilter,
           page: currentPage,
           perPage: 20,
         ),
@@ -200,17 +240,55 @@ class _AdminsTableState extends State<_AdminsTable> {
     );
 
     return div(classes: 'space-y-5', [
-      // Toolbar
+      // Toolbar Header
       div(classes: 'flex flex-col md:flex-row md:items-center justify-between gap-4', [
-        div(classes: 'flex items-center space-x-2', [
-          h3(
-            classes: 'text-base font-bold tracking-tight',
-            styles: Styles(color: Color(colorScheme.textHeading)),
-            [Component.text('Admin Accounts')],
-          ),
-        ]),
+       
         div(classes: 'flex flex-wrap items-center gap-3', [
-          // Search
+          // Add Service Primary Button
+          button(
+            onClick: () {
+              CreateServiceDialog.show(context);
+            },
+            classes:
+                'active:scale-[0.98] text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer border-none shrink-0 hover:opacity-95',
+            styles: Styles(backgroundColor: Color(colorScheme.primary)),
+            [
+              const AppIcon(AppIcons.plus),
+              span([Component.text('Add Service')]),
+            ],
+          ),
+          // Category Filter Dropdown
+          select(
+            onChange: (value) {
+              final parsed = _cleanCategoryId(value);
+              setState(() {
+                selectedCategoryId = parsed;
+                currentPage = 1;
+              });
+            },
+            classes:
+                'border rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 transition-all cursor-pointer shadow-xs',
+            styles: Styles(
+              backgroundColor: Color(colorScheme.inputBg),
+              color: Color(colorScheme.textPrimary),
+              raw: {'border-color': colorScheme.borderInput},
+            ),
+            [
+              option(value: '', selected: cleanCatId == null || cleanCatId.isEmpty, [
+                Component.text('All Categories'),
+              ]),
+              for (final cat in categoriesList)
+                option(
+                  value: cat.id ?? '',
+                  selected: cleanCatId == cat.id,
+                  [
+                    Component.text(cat.name ?? 'Category #${cat.id}'),
+                  ],
+                ),
+            ],
+          ),
+
+          // Search Input
           div(classes: 'relative w-full sm:w-64', [
             div(
               classes: 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none',
@@ -227,27 +305,37 @@ class _AdminsTableState extends State<_AdminsTable> {
                 color: Color(colorScheme.textPrimary),
                 raw: {'border-color': colorScheme.borderInput},
               ),
-              attributes: {'placeholder': 'Search admins by email...'},
+              attributes: {'placeholder': 'Search services...'},
               onInput: _onSearchInput,
             ),
           ]),
-          // Invite Admin Dialog Button
-          button(
-            type: ButtonType.button,
-            onClick: () => InviteAdminDialog.show(context),
-            classes:
-                'px-3.5 py-2 rounded-xl text-xs font-bold text-white cursor-pointer transition-all flex items-center space-x-1.5 border-none shadow-sm hover:opacity-90 active:scale-95',
-            styles: Styles(backgroundColor: Color(colorScheme.primary)),
-            [
-              span(classes: 'text-sm leading-none', [Component.text('+')]),
-              span([Component.text('Invite Admin')]),
-            ],
-          ),
+
+          // Active Status Pills
+          for (final status in <String?>[null, 'active', 'inactive'])
+            button(
+              onClick: () => setState(() {
+                selectedStatus = status;
+                currentPage = 1;
+              }),
+              classes: 'px-3 py-1.5 rounded-lg transition-all cursor-pointer text-[11px] font-bold border',
+              styles: selectedStatus == status
+                  ? Styles(
+                      backgroundColor: Color(colorScheme.primary),
+                      color: Color('#FFFFFF'),
+                      raw: {'border-color': colorScheme.primary},
+                    )
+                  : Styles(
+                      backgroundColor: Color(colorScheme.inputBg),
+                      color: Color(colorScheme.textSecondary),
+                      raw: {'border-color': colorScheme.borderInput},
+                    ),
+              [Component.text(status == null ? 'All' : (status == 'active' ? 'Active' : 'Inactive'))],
+            ),
         ]),
       ]),
 
-      // Data
-      adminsAsync.when(
+      // Table Content
+      servicesAsync.when(
         data: (paginatedData) {
           final items = paginatedData?.items ?? [];
           final total = paginatedData?.total ?? items.length;
@@ -256,12 +344,14 @@ class _AdminsTableState extends State<_AdminsTable> {
           if (items.isEmpty) {
             return _EmptyState(
               colorScheme: colorScheme,
-              message: 'No administrators found',
+              message: 'No service offerings found',
               onReset: () {
                 _searchDebounceTimer?.cancel();
                 _searchInputValue = '';
                 setState(() {
                   searchQuery = '';
+                  selectedStatus = null;
+                  selectedCategoryId = null;
                   currentPage = 1;
                 });
               },
@@ -283,12 +373,11 @@ class _AdminsTableState extends State<_AdminsTable> {
                     ),
                     [
                       tr([
-                        th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Admin')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Role')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Region')]),
+                        th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Service')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Category')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Take Rate')]),
                         th(classes: 'p-3.5 text-center whitespace-nowrap', [Component.text('Status')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Last Login')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Created')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Created At')]),
                         th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
                       ]),
                     ],
@@ -300,79 +389,79 @@ class _AdminsTableState extends State<_AdminsTable> {
                       raw: {'border-color': colorScheme.border},
                     ),
                     [
-                      for (final admin in items)
+                      for (final service in items)
                         tr(
                           classes: 'hover:opacity-90 transition-colors cursor-pointer',
                           events: {
-                            'click': (_) => AdminDetailSidePanel.show(context, admin),
+                            'click': (_) => _showServiceDetail(context, service),
                           },
                           [
-                            // Admin name + email
+                            // Service info
                             td(classes: 'p-3.5 pl-4 whitespace-nowrap', [
                               div(classes: 'flex items-center space-x-3', [
-                                div(
-                                  classes:
-                                      'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 shadow-sm',
-                                  styles: Styles(backgroundColor: Color(colorScheme.primary)),
-                                  [
-                                    Component.text(
-                                      _initials(admin.fullname),
+                                if (service.imageUrl != null && service.imageUrl!.isNotEmpty)
+                                  img(
+                                    src: service.imageUrl!,
+                                    classes: 'w-8 h-8 rounded-lg object-cover border shrink-0',
+                                    styles: Styles(raw: {'border-color': colorScheme.border}),
+                                    alt: service.name ?? 'Service',
+                                  )
+                                else
+                                  div(
+                                    classes:
+                                        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs',
+                                    styles: Styles(
+                                      backgroundColor: Color(colorScheme.inputBg),
+                                      color: Color(colorScheme.primary),
                                     ),
-                                  ],
-                                ),
+                                    [const AppIcon(AppIcons.services)],
+                                  ),
                                 div([
                                   div(
                                     classes: 'font-bold text-xs',
                                     styles: Styles(color: Color(colorScheme.textHeading)),
-                                    [Component.text(admin.fullname ?? 'N/A')],
+                                    [Component.text(service.name ?? 'Unnamed Service')],
                                   ),
                                   div(
-                                    classes: 'text-[11px]',
+                                    classes: 'text-[10.5px] font-mono',
                                     styles: Styles(color: Color(colorScheme.textMuted)),
-                                    [Component.text(admin.email ?? 'No email')],
+                                    [Component.text(_formatId(service.id))],
                                   ),
                                 ]),
                               ]),
                             ]),
-                            // Role badge
-                            td(classes: 'p-3.5 whitespace-nowrap', [
-                              _RoleBadge(
-                                role: admin.role ?? 'UNKNOWN',
-                                colorScheme: colorScheme,
-                              ),
-                            ]),
-                            // Region
+                            // Category
                             td(
-                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
+                              classes: 'p-3.5 text-xs font-semibold whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textSecondary)),
-                              [Component.text(admin.region?.state ?? admin.region?.addressLine ?? '—')],
+                              [Component.text(service.category?.name ?? service.categoryId ?? '—')],
+                            ),
+                            // Take Rate
+                            td(
+                              classes: 'p-3.5 font-mono font-bold text-xs whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.primary)),
+                              [Component.text(_formatTakeRate(service.takeRate))],
                             ),
                             // Status
                             td(
                               classes: 'p-3.5 text-center whitespace-nowrap',
                               [
                                 _StatusBadge(
-                                  status: admin.isActive == true ? 'Active' : 'Inactive',
+                                  isActive: service.isActive == true,
                                   colorScheme: colorScheme,
                                 ),
                               ],
                             ),
-                            // Last login
+                            // Created At
                             td(
                               classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDateTime(admin.lastLoginAt))],
-                            ),
-                            // Created
-                            td(
-                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
-                              styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDateTime(admin.createdAt))],
+                              [Component.text(_formatDate(service.createdAt))],
                             ),
                             // Actions
                             td(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [
                               button(
-                                onClick: () => AdminDetailSidePanel.show(context, admin),
+                                onClick: () => _showServiceDetail(context, service),
                                 classes:
                                     'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all border-none whitespace-nowrap shrink-0',
                                 styles: Styles(backgroundColor: Color(colorScheme.primary)),
@@ -415,24 +504,28 @@ class _AdminsTableState extends State<_AdminsTable> {
       ),
     ]);
   }
+
+  void _showServiceDetail(BuildContext context, AdminServiceItem service) {
+    ServiceDetailSidePanel.show(context, service);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
-// Invitations Table Tab
+// Tab 2: Categories List Table Component
 // ─────────────────────────────────────────────────────────────
 
-class _InvitationsTable extends StatefulComponent {
-  const _InvitationsTable();
+class _CategoriesTable extends StatefulComponent {
+  const _CategoriesTable();
 
   @override
-  State<_InvitationsTable> createState() => _InvitationsTableState();
+  State<_CategoriesTable> createState() => _CategoriesTableState();
 }
 
-class _InvitationsTableState extends State<_InvitationsTable> {
-  String selectedStatus = '';
+class _CategoriesTableState extends State<_CategoriesTable> {
   String searchQuery = '';
   String _searchInputValue = '';
   Timer? _searchDebounceTimer;
+  String? selectedStatus; // null = All, 'active' = true, 'inactive' = false
   int currentPage = 1;
 
   @override
@@ -452,52 +545,20 @@ class _InvitationsTableState extends State<_InvitationsTable> {
     });
   }
 
-  void _handleResend(BuildContext context, String invitationId) {
-    context.read(adminManagementProvider.notifier).resendInvitation(
-      invitationId,
-      onSuccess: (message) {
-        context.showFlushbar(message: message, type: FlushbarType.success);
-        context.invalidate(listInvitationsProvider(
-          ListInvitationsParams(
-            email: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
-            status: selectedStatus.isEmpty ? null : selectedStatus,
-            page: currentPage,
-          ),
-        ));
-      },
-      onError: (message) {
-        context.showFlushbar(message: message, type: FlushbarType.error);
-      },
-    );
-  }
-
-  void _handleRevoke(BuildContext context, String invitationId) {
-    context.read(adminManagementProvider.notifier).revokeInvitation(
-      invitationId,
-      onSuccess: (message) {
-        context.showFlushbar(message: message, type: FlushbarType.success);
-        context.invalidate(listInvitationsProvider(
-          ListInvitationsParams(
-            email: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
-            status: selectedStatus.isEmpty ? null : selectedStatus,
-            page: currentPage,
-          ),
-        ));
-      },
-      onError: (message) {
-        context.showFlushbar(message: message, type: FlushbarType.error);
-      },
-    );
+  bool? get _isActiveFilter {
+    if (selectedStatus == 'active') return true;
+    if (selectedStatus == 'inactive') return false;
+    return null;
   }
 
   @override
   Component build(BuildContext context) {
     final colorScheme = context.watch(uiStateProvider.select((state) => state.colorScheme));
-    final invitationsAsync = context.watch(
-      listInvitationsProvider(
-        ListInvitationsParams(
-          email: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
-          status: selectedStatus.isEmpty ? null : selectedStatus,
+    final categoriesAsync = context.watch(
+      adminCategoriesProvider(
+        ListCategoriesParams(
+          search: searchQuery.trim().isEmpty ? null : searchQuery.trim(),
+          isActive: _isActiveFilter,
           page: currentPage,
           perPage: 20,
         ),
@@ -505,18 +566,25 @@ class _InvitationsTableState extends State<_InvitationsTable> {
     );
 
     return div(classes: 'space-y-5', [
-      // Toolbar
+      // Toolbar Header
       div(classes: 'flex flex-col md:flex-row md:items-center justify-between gap-4', [
-        div(classes: 'flex items-center space-x-2', [
-          h3(
-            classes: 'text-base font-bold tracking-tight',
-            styles: Styles(color: Color(colorScheme.textHeading)),
-            [Component.text('Admin Invitations')],
-          ),
-        ]),
+       
         div(classes: 'flex flex-wrap items-center gap-3', [
-          // Search input
-          div(classes: 'relative w-full sm:w-60', [
+          // Add Category Primary Button
+          button(
+            onClick: () {
+              CreateCategoryDialog.show(context);
+            },
+            classes:
+                'active:scale-[0.98] text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer border-none shrink-0 hover:opacity-95',
+            styles: Styles(backgroundColor: Color(colorScheme.primary)),
+            [
+              const AppIcon(AppIcons.plus),
+              span([Component.text('Add Category')]),
+            ],
+          ),
+          // Search Input
+          div(classes: 'relative w-full sm:w-64', [
             div(
               classes: 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none',
               styles: Styles(color: Color(colorScheme.placeholder)),
@@ -526,19 +594,19 @@ class _InvitationsTableState extends State<_InvitationsTable> {
               type: InputType.text,
               value: _searchInputValue,
               classes:
-                  'w-full border rounded-xl pl-9 pr-4 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all',
+                  'w-full border rounded-xl pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 transition-all',
               styles: Styles(
                 backgroundColor: Color(colorScheme.inputBg),
                 color: Color(colorScheme.textPrimary),
                 raw: {'border-color': colorScheme.borderInput},
               ),
-              attributes: {'placeholder': 'Search by email...'},
+              attributes: {'placeholder': 'Search categories...'},
               onInput: _onSearchInput,
             ),
           ]),
 
-          // Status filter pills
-          for (final status in ['', 'PENDING', 'ACCEPTED', 'REVOKED', 'EXPIRED'])
+          // Active Status Pills
+          for (final status in <String?>[null, 'active', 'inactive'])
             button(
               onClick: () => setState(() {
                 selectedStatus = status;
@@ -556,26 +624,13 @@ class _InvitationsTableState extends State<_InvitationsTable> {
                       color: Color(colorScheme.textSecondary),
                       raw: {'border-color': colorScheme.borderInput},
                     ),
-              [Component.text(status.isEmpty ? 'All' : _formatStatusLabel(status))],
+              [Component.text(status == null ? 'All' : (status == 'active' ? 'Active' : 'Inactive'))],
             ),
-
-          // Invite button
-          button(
-            type: ButtonType.button,
-            onClick: () => InviteAdminDialog.show(context),
-            classes:
-                'px-3.5 py-1.5 rounded-lg text-[11px] font-bold text-white cursor-pointer transition-all flex items-center space-x-1.5 border-none shadow-sm hover:opacity-90 active:scale-95',
-            styles: Styles(backgroundColor: Color(colorScheme.primary)),
-            [
-              span(classes: 'text-sm leading-none', [Component.text('+')]),
-              span([Component.text('Invite Admin')]),
-            ],
-          ),
         ]),
       ]),
 
-      // Data
-      invitationsAsync.when(
+      // Table Content
+      categoriesAsync.when(
         data: (paginatedData) {
           final items = paginatedData?.items ?? [];
           final total = paginatedData?.total ?? items.length;
@@ -584,13 +639,13 @@ class _InvitationsTableState extends State<_InvitationsTable> {
           if (items.isEmpty) {
             return _EmptyState(
               colorScheme: colorScheme,
-              message: 'No invitations found',
+              message: 'No service categories found',
               onReset: () {
                 _searchDebounceTimer?.cancel();
                 _searchInputValue = '';
                 setState(() {
                   searchQuery = '';
-                  selectedStatus = '';
+                  selectedStatus = null;
                   currentPage = 1;
                 });
               },
@@ -612,11 +667,10 @@ class _InvitationsTableState extends State<_InvitationsTable> {
                     ),
                     [
                       tr([
-                        th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Email')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Role')]),
+                        th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Category')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Description')]),
                         th(classes: 'p-3.5 text-center whitespace-nowrap', [Component.text('Status')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Expires')]),
-                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Sent')]),
+                        th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Created At')]),
                         th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
                       ]),
                     ],
@@ -628,99 +682,78 @@ class _InvitationsTableState extends State<_InvitationsTable> {
                       raw: {'border-color': colorScheme.border},
                     ),
                     [
-                      for (final invite in items)
+                      for (final category in items)
                         tr(
                           classes: 'hover:opacity-90 transition-colors cursor-pointer',
                           events: {
-                            'click': (_) => InviteDetailSidePanel.show(context, invite),
+                            'click': (_) => _showCategoryDetail(context, category),
                           },
                           [
-                            // Email
-                            td(
-                              classes: 'p-3.5 pl-4 whitespace-nowrap',
-                              [
-                                div(classes: 'flex items-center space-x-3', [
+                            // Category info
+                            td(classes: 'p-3.5 pl-4 whitespace-nowrap', [
+                              div(classes: 'flex items-center space-x-3', [
+                                if (category.imageUrl != null && category.imageUrl!.isNotEmpty)
+                                  img(
+                                    src: category.imageUrl!,
+                                    classes: 'w-8 h-8 rounded-lg object-cover border shrink-0',
+                                    styles: Styles(raw: {'border-color': colorScheme.border}),
+                                    alt: category.name ?? 'Category',
+                                  )
+                                else
                                   div(
                                     classes:
-                                        'w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm',
+                                        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-xs',
                                     styles: Styles(
                                       backgroundColor: Color(colorScheme.inputBg),
                                       color: Color(colorScheme.primary),
                                     ),
-                                    [const AppIcon(AppIcons.externalLink)],
+                                    [const AppIcon(AppIcons.overview)],
                                   ),
-                                  span(
-                                    classes: 'font-bold text-xs whitespace-nowrap',
+                                div([
+                                  div(
+                                    classes: 'font-bold text-xs',
                                     styles: Styles(color: Color(colorScheme.textHeading)),
-                                    [Component.text(invite.email ?? 'N/A')],
+                                    [Component.text(category.name ?? 'Unnamed Category')],
+                                  ),
+                                  div(
+                                    classes: 'text-[10.5px] font-mono',
+                                    styles: Styles(color: Color(colorScheme.textMuted)),
+                                    [Component.text(_formatId(category.id))],
                                   ),
                                 ]),
-                              ],
-                            ),
-                            // Role
-                            td(classes: 'p-3.5 whitespace-nowrap', [
-                              _RoleBadge(
-                                role: invite.role ?? 'UNKNOWN',
-                                colorScheme: colorScheme,
-                              ),
+                              ]),
                             ]),
+                            // Description
+                            td(
+                              classes: 'p-3.5 text-xs max-w-xs truncate whitespace-nowrap',
+                              styles: Styles(color: Color(colorScheme.textSecondary)),
+                              [Component.text(category.description ?? '—')],
+                            ),
                             // Status
                             td(
                               classes: 'p-3.5 text-center whitespace-nowrap',
                               [
-                                _InvitationStatusBadge(
-                                  status: invite.status ?? 'UNKNOWN',
+                                _StatusBadge(
+                                  isActive: category.isActive == true,
                                   colorScheme: colorScheme,
                                 ),
                               ],
                             ),
-                            // Expires
+                            // Created At
                             td(
                               classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
                               styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDateTime(invite.expiresAt))],
-                            ),
-                            // Sent
-                            td(
-                              classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
-                              styles: Styles(color: Color(colorScheme.textMuted)),
-                              [Component.text(_formatDateTime(invite.createdAt))],
+                              [Component.text(_formatDate(category.createdAt))],
                             ),
                             // Actions
                             td(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [
-                              div(classes: 'flex items-center justify-center space-x-1.5 whitespace-nowrap', [
-                                button(
-                                  onClick: () => InviteDetailSidePanel.show(context, invite),
-                                  classes:
-                                      'text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-xs cursor-pointer transition-all border-none whitespace-nowrap shrink-0',
-                                  styles: Styles(backgroundColor: Color(colorScheme.primary)),
-                                  [Component.text('View')],
-                                ),
-                                if (invite.status == 'PENDING' && invite.id != null) ...[
-                                  button(
-                                    onClick: () => _handleResend(context, invite.id!),
-                                    classes:
-                                        'text-[11px] font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-all border whitespace-nowrap shrink-0',
-                                    styles: Styles(
-                                      backgroundColor: Color(colorScheme.inputBg),
-                                      color: Color(colorScheme.primary),
-                                      raw: {'border-color': colorScheme.borderInput},
-                                    ),
-                                    [Component.text('Resend')],
-                                  ),
-                                  button(
-                                    onClick: () => _handleRevoke(context, invite.id!),
-                                    classes:
-                                        'text-[11px] font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-all border whitespace-nowrap shrink-0',
-                                    styles: Styles(
-                                      backgroundColor: Color(colorScheme.inputBg),
-                                      color: Color('#ef4444'),
-                                      raw: {'border-color': colorScheme.borderInput},
-                                    ),
-                                    [Component.text('Revoke')],
-                                  ),
-                                ],
-                              ]),
+                              button(
+                                onClick: () => _showCategoryDetail(context, category),
+                                classes:
+                                    'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all border-none whitespace-nowrap shrink-0',
+                                styles: Styles(backgroundColor: Color(colorScheme.primary)),
+                                [Component.text('View')],
+                              ),
                             ]),
                           ],
                         ),
@@ -758,69 +791,21 @@ class _InvitationsTableState extends State<_InvitationsTable> {
       ),
     ]);
   }
-}
 
-// ─────────────────────────────────────────────────────────────
-// Shared Sub-components
-// ─────────────────────────────────────────────────────────────
-
-class _RoleBadge extends StatelessComponent {
-  final String role;
-  final ColorScheme colorScheme;
-
-  const _RoleBadge({required this.role, required this.colorScheme});
-
-  @override
-  Component build(BuildContext context) {
-    String bgClass;
-    String textClass;
-    String borderClass;
-
-    switch (role) {
-      case 'ROOT_ADMIN':
-        bgClass = 'bg-violet-50 dark:bg-violet-950/60';
-        textClass = 'text-violet-600 dark:text-violet-400';
-        borderClass = 'border-violet-200/50 dark:border-violet-800/50';
-        break;
-      case 'SUPER_ADMIN':
-        bgClass = 'bg-blue-50 dark:bg-blue-950/60';
-        textClass = 'text-blue-600 dark:text-blue-400';
-        borderClass = 'border-blue-200/50 dark:border-blue-800/50';
-        break;
-      case 'OPERATIONS':
-        bgClass = 'bg-amber-50 dark:bg-amber-950/60';
-        textClass = 'text-amber-600 dark:text-amber-400';
-        borderClass = 'border-amber-200/50 dark:border-amber-800/50';
-        break;
-      case 'FINANCE':
-        bgClass = 'bg-emerald-50 dark:bg-emerald-950/60';
-        textClass = 'text-emerald-600 dark:text-emerald-400';
-        borderClass = 'border-emerald-200/50 dark:border-emerald-800/50';
-        break;
-      case 'SUPPORT':
-        bgClass = 'bg-sky-50 dark:bg-sky-950/60';
-        textClass = 'text-sky-600 dark:text-sky-400';
-        borderClass = 'border-sky-200/50 dark:border-sky-800/50';
-        break;
-      default:
-        bgClass = 'bg-slate-50 dark:bg-slate-800';
-        textClass = 'text-slate-600 dark:text-slate-400';
-        borderClass = 'border-slate-200 dark:border-slate-700';
-    }
-
-    return span(
-      classes:
-          'px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide inline-block leading-snug border whitespace-nowrap $bgClass $textClass $borderClass',
-      [Component.text(_formatRoleLabel(role))],
-    );
+  void _showCategoryDetail(BuildContext context, AdminCategoryItem category) {
+    CategoryDetailSidePanel.show(context, category);
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Shared Sub-components & Helpers
+// ─────────────────────────────────────────────────────────────
+
 class _StatusBadge extends StatelessComponent {
-  final String status;
+  final bool isActive;
   final ColorScheme colorScheme;
 
-  const _StatusBadge({required this.status, required this.colorScheme});
+  const _StatusBadge({required this.isActive, required this.colorScheme});
 
   @override
   Component build(BuildContext context) {
@@ -828,7 +813,7 @@ class _StatusBadge extends StatelessComponent {
     String textClass;
     String borderClass;
 
-    if (status == 'Active') {
+    if (isActive) {
       bgClass = 'bg-emerald-50 dark:bg-emerald-950/60';
       textClass = 'text-emerald-600 dark:text-emerald-400';
       borderClass = 'border-emerald-200/50 dark:border-emerald-800/50';
@@ -841,57 +826,11 @@ class _StatusBadge extends StatelessComponent {
     return span(
       classes:
           'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none border whitespace-nowrap $bgClass $textClass $borderClass',
-      [Component.text(status)],
+      [Component.text(isActive ? 'Active' : 'Inactive')],
     );
   }
 }
 
-class _InvitationStatusBadge extends StatelessComponent {
-  final String status;
-  final ColorScheme colorScheme;
-
-  const _InvitationStatusBadge({required this.status, required this.colorScheme});
-
-  @override
-  Component build(BuildContext context) {
-    String bgClass;
-    String textClass;
-    String borderClass;
-
-    switch (status) {
-      case 'PENDING':
-        bgClass = 'bg-amber-50 dark:bg-amber-950/60';
-        textClass = 'text-amber-600 dark:text-amber-400';
-        borderClass = 'border-amber-200/50 dark:border-amber-800/50';
-        break;
-      case 'ACCEPTED':
-        bgClass = 'bg-emerald-50 dark:bg-emerald-950/60';
-        textClass = 'text-emerald-600 dark:text-emerald-400';
-        borderClass = 'border-emerald-200/50 dark:border-emerald-800/50';
-        break;
-      case 'REVOKED':
-        bgClass = 'bg-rose-50 dark:bg-rose-950/60';
-        textClass = 'text-rose-600 dark:text-rose-400';
-        borderClass = 'border-rose-200/50 dark:border-rose-800/50';
-        break;
-      case 'EXPIRED':
-        bgClass = 'bg-slate-100 dark:bg-slate-800';
-        textClass = 'text-slate-500 dark:text-slate-400';
-        borderClass = 'border-slate-200 dark:border-slate-700';
-        break;
-      default:
-        bgClass = 'bg-slate-100 dark:bg-slate-800';
-        textClass = 'text-slate-600 dark:text-slate-400';
-        borderClass = 'border-slate-200 dark:border-slate-700';
-    }
-
-    return span(
-      classes:
-          'px-3 py-1 rounded-full text-[11px] font-bold inline-block leading-none border whitespace-nowrap $bgClass $textClass $borderClass',
-      [Component.text(_formatStatusLabel(status))],
-    );
-  }
-}
 
 class _EmptyState extends StatelessComponent {
   final ColorScheme colorScheme;
@@ -1022,7 +961,7 @@ class _ErrorState extends StatelessComponent {
         raw: {'border-color': colorScheme.border},
       ),
       [
-        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Data')]),
+        div(classes: 'text-rose-500 font-bold text-lg', [Component.text('Failed to Load Catalog Data')]),
         p(classes: 'text-xs text-slate-400 max-w-md mx-auto', [Component.text(errorMsg)]),
         button(
           onClick: onRetry,
@@ -1035,48 +974,21 @@ class _ErrorState extends StatelessComponent {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────
-
-String _initials(String? fullname) {
-  if (fullname == null || fullname.isEmpty) return '??';
-  return fullname.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
+String _formatId(String? id) {
+  if (id == null || id.isEmpty) return '—';
+  if (id.length <= 8) return '#$id';
+  return '#${id.substring(0, 8)}...';
 }
 
-String _formatDateTime(DateTime? dt) {
+String _formatDate(DateTime? dt) {
   if (dt == null) return '—';
   return '${dt.day}/${dt.month}/${dt.year}';
 }
 
-String _formatRoleLabel(String role) {
-  switch (role) {
-    case 'ROOT_ADMIN':
-      return 'Root Admin';
-    case 'SUPER_ADMIN':
-      return 'Super Admin';
-    case 'OPERATIONS':
-      return 'Operations';
-    case 'SUPPORT':
-      return 'Support';
-    case 'FINANCE':
-      return 'Finance';
-    default:
-      return role;
-  }
-}
-
-String _formatStatusLabel(String status) {
-  switch (status) {
-    case 'PENDING':
-      return 'Pending';
-    case 'ACCEPTED':
-      return 'Accepted';
-    case 'REVOKED':
-      return 'Revoked';
-    case 'EXPIRED':
-      return 'Expired';
-    default:
-      return status;
-  }
+String _formatTakeRate(num? rate) {
+  if (rate == null) return '0%';
+  final double val = rate.toDouble();
+  final double percentage = (val > 0 && val <= 1.0) ? val * 100 : val;
+  final formatted = percentage % 1 == 0 ? percentage.toInt().toString() : percentage.toStringAsFixed(1);
+  return '$formatted%';
 }

@@ -264,7 +264,7 @@ class _TasksTableState extends State<_TasksTable> {
                 color: Color(colorScheme.textPrimary),
                 raw: {'border-color': colorScheme.borderInput},
               ),
-              attributes: {'placeholder': 'Search tasks by title or ID...'},
+              attributes: {'placeholder': 'Search by title, id:, service:, category:...'},
               onInput: _onSearchInput,
             ),
           ]),

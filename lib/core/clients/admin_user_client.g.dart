@@ -173,6 +173,8 @@ class _AdminUserClient implements AdminUserClient {
 
   @override
   Future<BaseApiResponse<PaginatedData<AdminPlatformUserItem>>> getUsers({
+    String? userId,
+    String? id,
     String? email,
     String? phoneNumber,
     String? name,
@@ -184,6 +186,8 @@ class _AdminUserClient implements AdminUserClient {
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
+      r'user_id': userId,
+      r'id': id,
       r'email': email,
       r'phone_number': phoneNumber,
       r'name': name,

@@ -14,6 +14,9 @@ import 'package:taska_admin/pages/home.dart' deferred as _home;
 import 'package:taska_admin/pages/interviews.dart' deferred as _interviews;
 import 'package:taska_admin/pages/kyc.dart' deferred as _kyc;
 import 'package:taska_admin/pages/login.dart' deferred as _login;
+import 'package:taska_admin/pages/payments.dart' deferred as _payments;
+import 'package:taska_admin/pages/service_management.dart'
+    deferred as _service_management;
 import 'package:taska_admin/pages/support.dart' deferred as _support;
 import 'package:taska_admin/pages/support_ticket_workspace_manager.dart'
     deferred as _support_ticket_workspace_manager;
@@ -61,6 +64,14 @@ ClientOptions get defaultClientOptions => ClientOptions(
     'login': ClientLoader(
       (p) => _login.LoginPage(),
       loader: _login.loadLibrary,
+    ),
+    'payments': ClientLoader(
+      (p) => _payments.PaymentsPage(),
+      loader: _payments.loadLibrary,
+    ),
+    'service_management': ClientLoader(
+      (p) => _service_management.ServiceManagementPage(),
+      loader: _service_management.loadLibrary,
     ),
     'support': ClientLoader(
       (p) => _support.SupportPage(),

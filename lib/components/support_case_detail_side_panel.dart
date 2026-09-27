@@ -540,7 +540,7 @@ class _SupportCaseDetailSidePanelState extends State<SupportCaseDetailSidePanel>
         bgColor = colorScheme.isDark ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)';
         borderColor = colorScheme.isDark ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.2)';
         break;
-      case 'WAITING_FOR_USER':
+      case 'WAITING_FOR_CUSTOMER':
       case 'WAITING_FOR_PROVIDER':
       case 'WAITING_FOR_INTERNAL':
         dotColor = '#3B82F6';

@@ -17,6 +17,8 @@ import 'pages/home.dart';
 import 'pages/interviews.dart';
 import 'pages/kyc.dart';
 import 'pages/login.dart';
+import 'pages/payments.dart';
+import 'pages/service_management.dart';
 import 'pages/support.dart';
 import 'pages/support_ticket_workspace_manager.dart';
 import 'pages/tasks.dart';
@@ -85,6 +87,8 @@ class App extends StatelessComponent {
                 title = 'Provider Interviews';
               } else if (activePath == '/tasks') {
                 title = 'Tasks Management';
+              } else if (activePath == '/services' || activePath == '/service-management') {
+                title = 'Service Management';
               } else if (activePath == '/disputes') {
                 title = 'Disputes & Claims';
               } else if (activePath == '/support' || activePath == '/help') {
@@ -154,6 +158,16 @@ class App extends StatelessComponent {
                 builder: (context, state) => const TasksPage(),
               ),
               Route(
+                path: '/services',
+                title: 'Taska Admin - Services',
+                builder: (context, state) => const ServiceManagementPage(),
+              ),
+              Route(
+                path: '/service-management',
+                title: 'Taska Admin - Services',
+                builder: (context, state) => const ServiceManagementPage(),
+              ),
+              Route(
                 path: '/disputes',
                 title: 'Taska Admin - Disputes',
                 builder: (context, state) => const _PlaceholderPage(
@@ -169,10 +183,7 @@ class App extends StatelessComponent {
               Route(
                 path: '/payments',
                 title: 'Taska Admin - Payments',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'Payments & Transactions',
-                  description: 'View payout history, transaction ledgers, escrow holds, and gateway logs.',
-                ),
+                builder: (context, state) => const PaymentsPage(),
               ),
               Route(
                 path: '/administrators',

@@ -19,29 +19,61 @@ import '../providers/stats_providers.dart';
 import '../utils/error_handler.dart';
 
 class GetUsersParams {
+  final String? userId;
+  final String? name;
+  final String? email;
   final String? search;
   final int? page;
 
-  const GetUsersParams({this.search, this.page});
+  const GetUsersParams({
+    this.userId,
+    this.name,
+    this.email,
+    this.search,
+    this.page,
+  });
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is GetUsersParams &&
           runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          name == other.name &&
+          email == other.email &&
           search == other.search &&
           page == other.page;
 
   @override
-  int get hashCode => Object.hash(search, page);
+  int get hashCode => Object.hash(userId, name, email, search, page);
 }
 
 final adminUsersProvider =
     FutureProvider.family<PaginatedData<AdminPlatformUserItem>?, GetUsersParams>(
   (ref, params) async {
     final client = ref.watch(adminUserClientProvider);
+
+    String? userId = params.userId;
+    String? name = params.name;
+    String? email = params.email;
+
+    if (params.search != null && params.search!.trim().isNotEmpty) {
+      final rawQuery = params.search!.trim();
+      final lower = rawQuery.toLowerCase();
+      if (lower.startsWith('id:')) {
+        userId = rawQuery.substring(3).trim();
+      } else if (lower.startsWith('name:')) {
+        name = rawQuery.substring(5).trim();
+      } else {
+        email = rawQuery;
+      }
+    }
+
     final response = await client.getUsers(
-      email: (params.search != null && params.search!.isNotEmpty) ? params.search : null,
+      userId: (userId != null && userId.isNotEmpty) ? userId : null,
+      id: (userId != null && userId.isNotEmpty) ? userId : null,
+      name: (name != null && name.isNotEmpty) ? name : null,
+      email: (email != null && email.isNotEmpty) ? email : null,
       page: params.page ?? 1,
     );
     return response.data;

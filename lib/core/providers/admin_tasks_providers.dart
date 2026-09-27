@@ -12,6 +12,8 @@ class ListTasksParams {
   final String? categoryId;
   final String? serviceId;
   final String? search;
+  final String? taskId;
+  final String? name;
   final num? latitude;
   final num? longitude;
   final num? radiusKm;
@@ -29,6 +31,8 @@ class ListTasksParams {
     this.categoryId,
     this.serviceId,
     this.search,
+    this.taskId,
+    this.name,
     this.latitude,
     this.longitude,
     this.radiusKm,
@@ -51,6 +55,8 @@ class ListTasksParams {
           categoryId == other.categoryId &&
           serviceId == other.serviceId &&
           search == other.search &&
+          taskId == other.taskId &&
+          name == other.name &&
           latitude == other.latitude &&
           longitude == other.longitude &&
           radiusKm == other.radiusKm &&
@@ -78,6 +84,8 @@ class ListTasksParams {
         categoryId,
         serviceId,
         search,
+        taskId,
+        name,
         latitude,
         longitude,
         radiusKm,
@@ -94,13 +102,46 @@ final listTasksProvider =
     FutureProvider.family<PaginatedData<AdminTaskItem>?, ListTasksParams>(
   (ref, params) async {
     final client = ref.watch(adminTasksManagementClientProvider);
+
+    String? taskId = params.taskId;
+    String? name = params.name;
+    String? categoryId = params.categoryId;
+    String? serviceId = params.serviceId;
+    String? search = params.search;
+
+    if (search != null && search.trim().isNotEmpty) {
+      final rawQuery = search.trim();
+      final lower = rawQuery.toLowerCase();
+      if (lower.startsWith('id:')) {
+        taskId = rawQuery.substring(3).trim();
+        search = null;
+      } else if (lower.startsWith('name:')) {
+        name = rawQuery.substring(5).trim();
+        search = null;
+      } else if (lower.startsWith('service:') || lower.startsWith('service_id:')) {
+        final colonIdx = rawQuery.indexOf(':');
+        serviceId = rawQuery.substring(colonIdx + 1).trim();
+        search = null;
+      } else if (lower.startsWith('category:') || lower.startsWith('category_id:')) {
+        final colonIdx = rawQuery.indexOf(':');
+        categoryId = rawQuery.substring(colonIdx + 1).trim();
+        search = null;
+      } else {
+        search = rawQuery;
+      }
+    }
+
     final response = await client.listTasks(
       page: params.page ?? 1,
       perPage: params.perPage ?? 20,
       status: params.status,
-      categoryId: params.categoryId,
-      serviceId: params.serviceId,
-      search: params.search,
+      categoryId: (categoryId != null && categoryId.isNotEmpty) ? categoryId : null,
+      serviceId: (serviceId != null && serviceId.isNotEmpty) ? serviceId : null,
+      search: search,
+      taskId: (taskId != null && taskId.isNotEmpty) ? taskId : null,
+      id: (taskId != null && taskId.isNotEmpty) ? taskId : null,
+      name: (name != null && name.isNotEmpty) ? name : null,
+      title: (name != null && name.isNotEmpty) ? name : null,
       latitude: params.latitude,
       longitude: params.longitude,
       radiusKm: params.radiusKm,

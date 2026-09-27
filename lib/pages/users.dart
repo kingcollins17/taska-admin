@@ -292,7 +292,7 @@ class _UsersTableState extends State<_UsersTable> {
                       color: Color(colorScheme.textPrimary),
                       raw: {'border-color': colorScheme.borderInput},
                     ),
-                    attributes: {'placeholder': 'Search users by email...'},
+                    attributes: {'placeholder': 'Search users by email, name:..., or id:...'},
                     onInput: _onSearchInput,
                   ),
                 ]),

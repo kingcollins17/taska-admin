@@ -134,7 +134,6 @@ class TopBar extends StatelessComponent {
               [Component.text(email)],
             ),
           ]),
-          const AppIcon(AppIcons.chevronDown),
         ]);
       },
       loading: () {

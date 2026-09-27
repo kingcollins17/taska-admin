@@ -112,16 +112,16 @@ class _SupportWorkspaceAssignedCasesPanelState extends State<SupportWorkspaceAss
                 h3(
                   classes: 'font-extrabold text-sm tracking-tight',
                   styles: Styles(color: Color(colorScheme.textHeading)),
-                  [Component.text('Assigned Tickets')],
+                  [Component.text('Support Queue')],
                 ),
                 // Total count badge – shows when data is loaded
                 assignedCasesAsync.when(
                   data: (paginatedData) {
                     final total = paginatedData?.total ?? 0;
                     return span(
-                      classes: 'px-1.5 py-0.5 rounded-md text-[10px] font-bold',
+                      classes: 'px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-2xs',
                       styles: Styles(
-                        backgroundColor: Color(colorScheme.inputBg),
+                        backgroundColor: colorScheme.isDark ? Color.rgba(0, 168, 112, 0.15) : Color.rgba(0, 168, 112, 0.08),
                         color: Color(colorScheme.primary),
                         raw: {'border-color': colorScheme.borderInput},
                       ),
@@ -134,19 +134,7 @@ class _SupportWorkspaceAssignedCasesPanelState extends State<SupportWorkspaceAss
               ]),
             ]),
 
-            // Sort dropdown row
-            div(classes: 'flex items-center justify-between', [
-              span(
-                classes: 'text-[11px] font-semibold',
-                styles: Styles(color: Color(colorScheme.textMuted)),
-                [Component.text('Sort: Newest first')],
-              ),
-              div(classes: 'flex items-center space-x-1', [
-                div(classes: 'w-3 h-3', styles: Styles(color: Color(colorScheme.textMuted)), [
-                  const AppIcon(AppIcons.filter),
-                ]),
-              ]),
-            ]),
+
 
             // Search Bar Input Box
             div(classes: 'relative w-full', [
@@ -158,15 +146,22 @@ class _SupportWorkspaceAssignedCasesPanelState extends State<SupportWorkspaceAss
               input(
                 type: InputType.text,
                 value: searchQuery,
-                classes: 'w-full border rounded-xl pl-9 pr-3 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all',
+                classes: 'w-full border rounded-xl pl-9 pr-8 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 transition-all',
                 styles: Styles(
                   backgroundColor: Color(colorScheme.inputBg),
                   color: Color(colorScheme.textPrimary),
                   raw: {'border-color': colorScheme.borderInput},
                 ),
-                attributes: {'placeholder': 'Search tickets, case #, user...'},
+                attributes: {'placeholder': 'Filter tickets, case #, user...'},
                 onInput: _onSearchInput,
               ),
+              if (searchQuery.isNotEmpty)
+                button(
+                  type: ButtonType.button,
+                  onClick: () => setState(() => searchQuery = ''),
+                  classes: 'absolute inset-y-0 right-0 pr-2.5 flex items-center text-xs text-slate-400 hover:text-slate-600 cursor-pointer border-none bg-transparent',
+                  [Component.text('✕')],
+                ),
             ]),
           ],
         ),
@@ -344,7 +339,7 @@ class TicketCardItem extends StatelessComponent {
 
     return div(
       events: {'click': (_) => onTap()},
-      classes: 'px-3.5 py-3 cursor-pointer transition-all border-l-[3px] flex items-start space-x-3 relative group',
+      classes: 'px-3.5 py-3 cursor-pointer transition-all border-l-[3px] flex items-start space-x-3 relative group hover:bg-slate-50 dark:hover:bg-slate-800/40',
       styles: Styles(
         backgroundColor: selectedBg,
         raw: {'border-left-color': leftBorderColor},
@@ -352,22 +347,24 @@ class TicketCardItem extends StatelessComponent {
       [
         // Avatar circle with initial letter
         div(
-          classes: 'w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-2xs mt-0.5',
+          classes: 'w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-2xs mt-0.5 relative group-hover:scale-105 transition-transform',
           styles: Styles(backgroundColor: Color(_avatarColor(displayName))),
-          [Component.text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'C')],
+          [
+            Component.text(displayName.isNotEmpty ? displayName[0].toUpperCase() : 'C'),
+          ],
         ),
 
         // Content area
         div(classes: 'flex-1 min-w-0 space-y-1', [
-          // Top row: case number + time
+          // Top row: case number + priority badge + time
           div(classes: 'flex items-center justify-between gap-1.5', [
             div(classes: 'flex items-center space-x-1.5 min-w-0', [
               span(
-                classes: 'font-mono font-bold text-[11px]',
+                classes: 'font-mono font-extrabold text-[11px]',
                 styles: Styles(color: Color(isSelected ? colorScheme.primary : colorScheme.textMuted)),
                 [Component.text('#$caseNo')],
               ),
-              _buildPriorityDot(priority),
+              _buildPriorityBadge(priority, colorScheme),
             ]),
             span(
               classes: 'text-[10px] font-medium text-slate-400 shrink-0',
@@ -378,22 +375,22 @@ class TicketCardItem extends StatelessComponent {
           // Name row with optional unread badge
           div(classes: 'flex items-center justify-between gap-1', [
             p(
-              classes: 'font-semibold text-xs truncate leading-snug',
+              classes: 'font-extrabold text-xs truncate leading-snug',
               styles: Styles(color: Color(colorScheme.textPrimary)),
               [Component.text(displayName)],
             ),
-            // Show unread count only if status is OPEN (visual indicator)
+            // Show unread indicator if status is OPEN
             if (status == 'OPEN')
               span(
-                classes: 'w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0',
-                styles: Styles(backgroundColor: Color('#EF4444')),
-                [Component.text('!')],
+                classes: 'w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0',
+                attributes: {'title': 'Open Ticket'},
+                [],
               ),
           ]),
 
           // Subject line
           p(
-            classes: 'text-[11px] truncate font-normal leading-snug',
+            classes: 'text-[11px] truncate font-medium leading-snug',
             styles: Styles(color: Color(colorScheme.textMuted)),
             [Component.text(subject)],
           ),
@@ -410,17 +407,39 @@ class TicketCardItem extends StatelessComponent {
     return colors[index];
   }
 
-  Component _buildPriorityDot(String priority) {
-    String colorClass = 'bg-sky-500';
+  Component _buildPriorityBadge(String priority, ColorScheme colorScheme) {
+    String label = 'Normal';
+    String bg = 'rgba(16, 185, 129, 0.1)';
+    String textCol = '#10B981';
+
     switch (priority.toUpperCase()) {
       case 'HIGH':
       case 'URGENT':
-        colorClass = 'bg-rose-500';
+        label = priority.toUpperCase() == 'URGENT' ? 'Urgent' : 'High';
+        bg = 'rgba(239, 68, 68, 0.12)';
+        textCol = '#EF4444';
         break;
       case 'LOW':
-        colorClass = 'bg-emerald-500';
+        label = 'Low';
+        bg = 'rgba(59, 130, 246, 0.12)';
+        textCol = '#3B82F6';
+        break;
+      case 'NORMAL':
+      default:
+        label = 'Normal';
+        bg = 'rgba(245, 158, 11, 0.12)';
+        textCol = '#F59E0B';
         break;
     }
-    return div(classes: 'w-2 h-2 rounded-full shrink-0 $colorClass', []);
+
+    return span(
+      classes: 'px-1.5 py-0.2 rounded text-[9.5px] font-bold uppercase tracking-wide border',
+      styles: Styles(
+        backgroundColor: Color(bg),
+        color: Color(textCol),
+        raw: {'border-color': 'transparent'},
+      ),
+      [Component.text(label)],
+    );
   }
 }

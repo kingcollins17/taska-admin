@@ -48,6 +48,8 @@ abstract class AdminUserClient {
 
   @GET('/users/admin')
   Future<BaseApiResponse<PaginatedData<AdminPlatformUserItem>>> getUsers({
+    @Query('user_id') String? userId,
+    @Query('id') String? id,
     @Query('email') String? email,
     @Query('phone_number') String? phoneNumber,
     @Query('name') String? name,
