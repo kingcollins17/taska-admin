@@ -9,6 +9,8 @@ import 'package:jaspr/client.dart';
 import 'package:taska_admin/pages/administrators.dart'
     deferred as _administrators;
 import 'package:taska_admin/pages/audit_logs.dart' deferred as _audit_logs;
+import 'package:taska_admin/pages/dispatch_sessions.dart'
+    deferred as _dispatch_sessions;
 import 'package:taska_admin/pages/guarantors.dart' deferred as _guarantors;
 import 'package:taska_admin/pages/home.dart' deferred as _home;
 import 'package:taska_admin/pages/interviews.dart' deferred as _interviews;
@@ -50,6 +52,12 @@ ClientOptions get defaultClientOptions => ClientOptions(
     'audit_logs': ClientLoader(
       (p) => _audit_logs.AuditLogsPage(),
       loader: _audit_logs.loadLibrary,
+    ),
+    'dispatch_sessions': ClientLoader(
+      (p) => _dispatch_sessions.DispatchSessionsPage(
+        taskId: p['taskId'] as String?,
+      ),
+      loader: _dispatch_sessions.loadLibrary,
     ),
     'guarantors': ClientLoader(
       (p) => _guarantors.GuarantorsPage(),

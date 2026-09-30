@@ -26,6 +26,7 @@ packages/taska_admin/app.client.module.json
 packages/taska_admin/clients.bundle.json
 packages/taska_admin/pages/administrators.client.module.json
 packages/taska_admin/pages/audit_logs.client.module.json
+packages/taska_admin/pages/dispatch_sessions.client.module.json
 packages/taska_admin/pages/guarantors.client.module.json
 packages/taska_admin/pages/home.client.module.json
 packages/taska_admin/pages/interviews.client.module.json

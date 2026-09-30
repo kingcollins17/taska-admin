@@ -1,9 +1,15 @@
+import 'package:dio/dio.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 
 import '../clients/admin_tasks_management_client.dart';
 import '../models/clients/base_response.dart';
+import '../models/clients/tasks/admin_cancel_task_request.dart';
+import '../models/clients/tasks/admin_dispatch_attempt.dart';
+import '../models/clients/tasks/admin_dispatch_session.dart';
 import '../models/clients/tasks/admin_task_detail.dart';
 import '../models/clients/tasks/admin_task_item.dart';
+import '../models/clients/tasks/trigger_admin_redispatch_request.dart';
+import '../utils/error_handler.dart';
 
 class ListTasksParams {
   final int? page;
@@ -209,3 +215,173 @@ final adminTaskStatsProvider = FutureProvider<AdminTaskStats?>((ref) async {
     );
   }
 });
+
+class ListDispatchSessionsParams {
+  final String? taskId;
+  final String? trigger;
+  final String? status;
+  final int? page;
+  final int? perPage;
+
+  const ListDispatchSessionsParams({
+    this.taskId,
+    this.trigger,
+    this.status,
+    this.page,
+    this.perPage,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListDispatchSessionsParams &&
+          runtimeType == other.runtimeType &&
+          taskId == other.taskId &&
+          trigger == other.trigger &&
+          status == other.status &&
+          page == other.page &&
+          perPage == other.perPage;
+
+  @override
+  int get hashCode => Object.hash(taskId, trigger, status, page, perPage);
+}
+
+final listDispatchSessionsProvider = FutureProvider.family<
+    PaginatedData<AdminDispatchSession>?, ListDispatchSessionsParams>(
+  (ref, params) async {
+    final client = ref.watch(adminTasksManagementClientProvider);
+    final response = await client.listDispatchSessions(
+      taskId: params.taskId,
+      trigger: params.trigger,
+      status: params.status,
+      page: params.page ?? 1,
+      perPage: params.perPage ?? 20,
+    );
+    return response.data;
+  },
+);
+
+class ListDispatchAttemptsParams {
+  final String? taskId;
+  final String? dispatchSessionId;
+  final String? providerId;
+  final String? status;
+  final int? page;
+  final int? perPage;
+
+  const ListDispatchAttemptsParams({
+    this.taskId,
+    this.dispatchSessionId,
+    this.providerId,
+    this.status,
+    this.page,
+    this.perPage,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListDispatchAttemptsParams &&
+          runtimeType == other.runtimeType &&
+          taskId == other.taskId &&
+          dispatchSessionId == other.dispatchSessionId &&
+          providerId == other.providerId &&
+          status == other.status &&
+          page == other.page &&
+          perPage == other.perPage;
+
+  @override
+  int get hashCode => Object.hash(
+        taskId,
+        dispatchSessionId,
+        providerId,
+        status,
+        page,
+        perPage,
+      );
+}
+
+final listDispatchAttemptsProvider = FutureProvider.family<
+    PaginatedData<AdminDispatchAttempt>?, ListDispatchAttemptsParams>(
+  (ref, params) async {
+    final client = ref.watch(adminTasksManagementClientProvider);
+    final response = await client.listDispatchAttempts(
+      taskId: params.taskId,
+      dispatchSessionId: params.dispatchSessionId,
+      providerId: params.providerId,
+      status: params.status,
+      page: params.page ?? 1,
+      perPage: params.perPage ?? 20,
+    );
+    return response.data;
+  },
+);
+
+// ─────────────────────────────────────────────────────────────
+// Admin Tasks Notifier
+// ─────────────────────────────────────────────────────────────
+
+final adminTasksProvider =
+    AsyncNotifierProvider<AdminTasksNotifier, void>(AdminTasksNotifier.new);
+
+class AdminTasksNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  /// Trigger admin-initiated redispatch for a task.
+  Future<void> triggerAdminRedispatch(
+    String taskId,
+    TriggerAdminRedispatchRequest request, {
+    void Function(String message)? onSuccess,
+    void Function(String message)? onError,
+  }) async {
+    try {
+      final client = ref.read(adminTasksManagementClientProvider);
+      final response = await client.triggerAdminRedispatch(taskId, request);
+
+      final successMsg = response.message ??
+          response.detail ??
+          'Redispatch triggered successfully';
+      onSuccess?.call(successMsg);
+    } catch (e, stackTrace) {
+      ErrorHandler.handle(e, stackTrace);
+      final errorMsg = _extractErrorMessage(e);
+      onError?.call(errorMsg);
+    }
+  }
+
+  /// Cancel a task by an administrator.
+  Future<void> adminCancelTask(
+    String taskId,
+    AdminCancelTaskRequest request, {
+    void Function(String message)? onSuccess,
+    void Function(String message)? onError,
+  }) async {
+    try {
+      final client = ref.read(adminTasksManagementClientProvider);
+      final response = await client.adminCancelTask(taskId, request);
+
+      final successMsg =
+          response.message ?? response.detail ?? 'Task cancelled successfully';
+      onSuccess?.call(successMsg);
+    } catch (e, stackTrace) {
+      ErrorHandler.handle(e, stackTrace);
+      final errorMsg = _extractErrorMessage(e);
+      onError?.call(errorMsg);
+    }
+  }
+
+  String _extractErrorMessage(dynamic e) {
+    if (e is DioException && e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map<String, dynamic>) {
+        return data['message'] as String? ??
+            data['detail'] as String? ??
+            e.message ??
+            'An unexpected error occurred';
+      }
+    }
+    return e.toString();
+  }
+}
+

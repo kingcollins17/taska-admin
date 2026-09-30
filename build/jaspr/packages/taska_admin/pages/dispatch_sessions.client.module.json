@@ -1,0 +1,1 @@
+{"name":"DispatchSessionsPage","id":["taska_admin","lib/pages/dispatch_sessions.dart"],"import":"package:taska_admin/pages/dispatch_sessions.dart","params":[{"name":"taskId","isNamed":true,"decoder":"p['taskId'] as String?","encoder":"c.taskId"}]}

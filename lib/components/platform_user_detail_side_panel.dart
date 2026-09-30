@@ -514,12 +514,72 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
             div(classes: 'space-y-3', [
               _buildSectionHeader('Performance Statistics', AppIcons.analytics, context),
               div(classes: 'grid grid-cols-2 sm:grid-cols-3 gap-3', [
-                _buildStatCard(context, 'Credibility', '${stats.credibilityScore ?? 0}', icon: AppIcons.guarantors),
-                _buildStatCard(context, 'Rating', '★ ${stats.averageRatings ?? 0}', icon: AppIcons.salesTag),
-                _buildStatCard(context, 'Completed', '${stats.totalTasksCompleted ?? 0}', icon: AppIcons.tasks),
-                _buildStatCard(context, 'Posted', '${stats.totalTasksPosted ?? 0}', icon: AppIcons.ordersDoc),
-                _buildStatCard(context, '30d Rate', '${stats.completionRate30d ?? 0}%', icon: AppIcons.chartGrowth),
-                _buildStatCard(context, 'Current Tier', 'Tier ${stats.currentTier ?? 1}', icon: AppIcons.overview),
+                _buildPerformanceKpiCard(
+                  context,
+                  title: 'Credibility',
+                  value: '${stats.credibilityScore ?? 0}',
+                  subtitle: 'Trust Score',
+                  icon: AppIcons.guarantors,
+                  gradient: 'from-emerald-500/15 via-teal-500/5 to-transparent',
+                  badgeBg: isDark ? Color.rgba(16, 185, 129, 0.2) : Color.rgba(16, 185, 129, 0.12),
+                  badgeTextColor: isDark ? Color.rgba(110, 231, 183, 1.0) : Color.rgba(4, 120, 87, 1.0),
+                  borderColor: 'rgba(16, 185, 129, 0.3)',
+                ),
+                _buildPerformanceKpiCard(
+                  context,
+                  title: 'Rating',
+                  value: '★ ${(stats.averageRatings ?? 0.0).toStringAsFixed(1)}',
+                  subtitle: 'User Reviews',
+                  icon: AppIcons.salesTag,
+                  gradient: 'from-amber-500/15 via-orange-500/5 to-transparent',
+                  badgeBg: isDark ? Color.rgba(245, 158, 11, 0.2) : Color.rgba(245, 158, 11, 0.12),
+                  badgeTextColor: isDark ? Color.rgba(252, 211, 77, 1.0) : Color.rgba(180, 83, 9, 1.0),
+                  borderColor: 'rgba(245, 158, 11, 0.3)',
+                ),
+                _buildPerformanceKpiCard(
+                  context,
+                  title: 'Completed',
+                  value: '${stats.totalTasksCompleted ?? 0}',
+                  subtitle: 'Jobs Done',
+                  icon: AppIcons.tasks,
+                  gradient: 'from-blue-500/15 via-indigo-500/5 to-transparent',
+                  badgeBg: isDark ? Color.rgba(59, 130, 246, 0.2) : Color.rgba(59, 130, 246, 0.12),
+                  badgeTextColor: isDark ? Color.rgba(147, 197, 253, 1.0) : Color.rgba(29, 78, 216, 1.0),
+                  borderColor: 'rgba(59, 130, 246, 0.3)',
+                ),
+                _buildPerformanceKpiCard(
+                  context,
+                  title: 'Posted',
+                  value: '${stats.totalTasksPosted ?? 0}',
+                  subtitle: 'Tasks Created',
+                  icon: AppIcons.ordersDoc,
+                  gradient: 'from-purple-500/15 via-violet-500/5 to-transparent',
+                  badgeBg: isDark ? Color.rgba(168, 85, 247, 0.2) : Color.rgba(168, 85, 247, 0.12),
+                  badgeTextColor: isDark ? Color.rgba(216, 180, 254, 1.0) : Color.rgba(126, 34, 206, 1.0),
+                  borderColor: 'rgba(168, 85, 247, 0.3)',
+                ),
+                _buildPerformanceKpiCard(
+                  context,
+                  title: '30d Rate',
+                  value: '${stats.completionRate30d ?? 0}%',
+                  subtitle: 'Recent Activity',
+                  icon: AppIcons.chartGrowth,
+                  gradient: 'from-cyan-500/15 via-sky-500/5 to-transparent',
+                  badgeBg: isDark ? Color.rgba(6, 182, 212, 0.2) : Color.rgba(6, 182, 212, 0.12),
+                  badgeTextColor: isDark ? Color.rgba(103, 232, 249, 1.0) : Color.rgba(14, 116, 144, 1.0),
+                  borderColor: 'rgba(6, 182, 212, 0.3)',
+                ),
+                _buildPerformanceKpiCard(
+                  context,
+                  title: 'Current Tier',
+                  value: 'Tier ${stats.currentTier ?? 1}',
+                  subtitle: 'Account Status',
+                  icon: AppIcons.overview,
+                  gradient: 'from-rose-500/15 via-pink-500/5 to-transparent',
+                  badgeBg: isDark ? Color.rgba(244, 63, 94, 0.2) : Color.rgba(244, 63, 94, 0.12),
+                  badgeTextColor: isDark ? Color.rgba(253, 164, 175, 1.0) : Color.rgba(190, 18, 60, 1.0),
+                  borderColor: 'rgba(244, 63, 94, 0.3)',
+                ),
               ]),
             ]),
           ],
@@ -787,35 +847,77 @@ class _PlatformUserDetailSidePanelState extends State<PlatformUserDetailSidePane
     );
   }
 
-  Component _buildStatCard(BuildContext context, String label, String value, {AppIcons? icon}) {
+  Component _buildPerformanceKpiCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required AppIcons icon,
+    required String gradient,
+    required Color badgeBg,
+    required Color badgeTextColor,
+    required String borderColor,
+  }) {
     final colorScheme = context.colorScheme;
 
     return div(
       classes:
-          'p-4 rounded-2xl border space-y-2 shadow-sm transition-all flex flex-col justify-between relative overflow-hidden',
+          'p-4 rounded-2xl border flex flex-col justify-between space-y-3 shadow-sm hover:shadow-md transition-all group relative overflow-hidden',
       styles: Styles(
-        backgroundColor: Color(colorScheme.surface),
-        raw: {'border-color': colorScheme.border},
+        backgroundColor: Color(colorScheme.inputBg),
+        raw: {'border-color': colorScheme.borderInput},
       ),
       [
-        div(classes: 'flex items-center justify-between gap-1', [
-          span(
-            classes: 'text-[10.5px] font-black uppercase tracking-wider block truncate',
-            styles: Styles(color: Color(colorScheme.textMuted)),
-            [Component.text(label)],
-          ),
-          if (icon != null)
-            div(
-              classes: 'w-4 h-4 shrink-0',
-              styles: Styles(color: Color(colorScheme.primary)),
-              [AppIcon(icon)],
-            ),
-        ]),
-        span(
-          classes: 'text-lg sm:text-xl font-black block tracking-tight mt-1',
-          styles: Styles(color: Color(colorScheme.textHeading)),
-          [Component.text(value)],
+        // Background gradient overlay
+        div(
+          classes:
+              'absolute inset-0 bg-gradient-to-br $gradient pointer-events-none opacity-70',
+          [],
         ),
+        // Decorative top right corner radial glow accent
+        div(
+          classes:
+              'absolute top-0 right-0 w-16 h-16 rounded-bl-full bg-gradient-to-bl $gradient opacity-50 pointer-events-none',
+          [],
+        ),
+        div(classes: 'relative space-y-2.5', [
+          div(classes: 'flex items-center justify-between gap-1', [
+            span(
+              classes:
+                  'text-[10.5px] font-extrabold uppercase tracking-wider block truncate',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [Component.text(title)],
+            ),
+            div(
+              classes:
+                  'w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 shadow-xs transition-transform group-hover:scale-110',
+              styles: Styles(
+                backgroundColor: badgeBg,
+                color: badgeTextColor,
+                raw: {'border-color': borderColor},
+              ),
+              [
+                div(
+                  classes: 'w-4 h-4',
+                  [AppIcon(icon)],
+                ),
+              ],
+            ),
+          ]),
+          div(classes: 'space-y-0.5', [
+            span(
+              classes:
+                  'text-lg sm:text-xl font-black block tracking-tight truncate group-hover:translate-x-0.5 transition-transform',
+              styles: Styles(color: Color(colorScheme.textHeading)),
+              [Component.text(value)],
+            ),
+            span(
+              classes: 'text-[10px] font-semibold block opacity-75 truncate',
+              styles: Styles(color: Color(colorScheme.textSecondary)),
+              [Component.text(subtitle)],
+            ),
+          ]),
+        ]),
       ],
     );
   }

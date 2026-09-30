@@ -508,7 +508,7 @@ class _FinancialSummaryCard extends StatelessComponent {
     final maxVal = revenue > payouts ? revenue : (payouts > 0 ? payouts : 1);
     final revenuePct = (revenue / maxVal * 100).clamp(0, 100).toInt();
     final payoutsPct = (payouts / maxVal * 100).clamp(0, 100).toInt();
-    final netBalance = revenue - payouts;
+    final netBalance = revenue;
 
     return div(
       classes: 'rounded-2xl p-6 border shadow-sm h-full flex flex-col',

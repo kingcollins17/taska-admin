@@ -2,6 +2,7 @@ import 'package:jaspr/dom.dart';
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 import 'package:jaspr_router/jaspr_router.dart';
+import 'package:taska_admin/core/utils/debug_utils.dart';
 
 import 'components/sidebar.dart';
 import 'components/top_bar.dart';
@@ -12,6 +13,7 @@ import 'core/services/local_storage.dart';
 import 'pages/about.dart';
 import 'pages/administrators.dart';
 import 'pages/audit_logs.dart';
+import 'pages/dispatch_sessions.dart';
 import 'pages/guarantors.dart';
 import 'pages/home.dart';
 import 'pages/interviews.dart';
@@ -87,6 +89,8 @@ class App extends StatelessComponent {
                 title = 'Provider Interviews';
               } else if (activePath == '/tasks') {
                 title = 'Tasks Management';
+              } else if (activePath == '/dispatch-sessions') {
+                title = 'Dispatch Sessions & Attempts';
               } else if (activePath == '/services' || activePath == '/service-management') {
                 title = 'Service Management';
               } else if (activePath == '/disputes') {
@@ -103,6 +107,8 @@ class App extends StatelessComponent {
                 title = 'System Settings';
               }
 
+              final uiState = context.watch(uiStateProvider);
+
               return div(
                 classes: 'w-full min-h-screen flex flex-col md:flex-row transition-colors duration-200',
                 styles: Styles(backgroundColor: Color(colorScheme.background)),
@@ -117,6 +123,11 @@ class App extends StatelessComponent {
                       child,
                     ],
                   ),
+                  if (uiState.isSidePanelOpen && uiState.sidePanel != null)
+                    buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
+                  if (uiState.isDialogOpen && uiState.dialog != null)
+                    buildDialogOverlay(context, uiState.dialog!, uiState.dialogTitle),
+                  if (uiState.flushbar != null) buildFlushbar(context, uiState.flushbar!),
                 ],
               );
             },
@@ -125,16 +136,19 @@ class App extends StatelessComponent {
               Route(
                 path: '/',
                 title: 'Taska Admin - Dashboard',
+                name: 'dashboard',
                 builder: (context, state) => const Home(),
               ),
               Route(
                 path: '/users',
                 title: 'Taska Admin - Users',
+                name: 'users',
                 builder: (context, state) => const UsersPage(),
               ),
               Route(
                 path: '/customers',
                 title: 'Taska Admin - Users',
+                name: 'customers',
                 builder: (context, state) => const UsersPage(),
               ),
               Route(
@@ -145,17 +159,30 @@ class App extends StatelessComponent {
               Route(
                 path: '/guarantors',
                 title: 'Taska Admin - Guarantors',
+                name: 'guarantors',
                 builder: (context, state) => const GuarantorsPage(),
               ),
               Route(
                 path: '/interviews',
                 title: 'Taska Admin - Interviews',
+                name: 'interviews',
                 builder: (context, state) => const InterviewsPage(),
               ),
               Route(
                 path: '/tasks',
                 title: 'Taska Admin - Tasks',
+                name: 'tasks',
                 builder: (context, state) => const TasksPage(),
+              ),
+              Route(
+                path: '/dispatch-sessions',
+                title: 'Taska Admin - Dispatch Sessions',
+                name: 'dispatchSessions',
+                builder: (context, state) {
+                  final taskId = state.queryParams['task_id'] ?? state.queryParams['taskId'];
+                  debugLog('Got here');
+                  return DispatchSessionsPage(taskId: taskId);
+                },
               ),
               Route(
                 path: '/services',
@@ -212,11 +239,6 @@ class App extends StatelessComponent {
           ),
         ],
       ),
-      if (uiState.isSidePanelOpen && uiState.sidePanel != null)
-        buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
-      if (uiState.isDialogOpen && uiState.dialog != null)
-        buildDialogOverlay(context, uiState.dialog!, uiState.dialogTitle),
-      if (uiState.flushbar != null) buildFlushbar(context, uiState.flushbar!),
     ]);
   }
 
@@ -300,7 +322,7 @@ class App extends StatelessComponent {
       [
         div(
           classes:
-              'h-full w-full max-w-md sm:max-w-lg ml-auto shadow-2xl border-l animate-side-panel-in flex flex-col relative transition-colors duration-200',
+              'h-full w-full max-w-md sm:max-w-lg md:max-w-[44vw] lg:max-w-[42vw] ml-auto shadow-2xl border-l animate-side-panel-in flex flex-col relative transition-colors duration-200',
           styles: Styles(
             backgroundColor: Color(colorScheme.background),
             raw: {'border-color': colorScheme.border},

@@ -1,7 +1,9 @@
 import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+import 'package:jaspr_router/jaspr_router.dart';
 import 'package:taska_admin/core/utils/currency_formatter.dart';
+import 'package:taska_admin/core/utils/debug_utils.dart';
 import 'package:universal_web/web.dart' as web;
 
 import '../core/designs/app_icons.dart';
@@ -197,6 +199,30 @@ class TaskDetailSidePanel extends StatelessComponent {
                     span([Component.text('Copy ID')]),
                   ],
                 ),
+                if (taskId != null && taskId.isNotEmpty)
+                  button(
+                    type: ButtonType.button,
+                    classes:
+                        'px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center space-x-1.5 active:scale-95 shadow-sm text-white bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 border-none',
+                    events: {
+                      'click': (_) {
+                        try {
+                          Router.of(context).pushNamed('dispatchSessions', queryParams: {'taskId': taskId});
+                        }  catch (e, st) {
+                          debugLog(e);
+                          debugLog(st);
+                        }
+                        context.hideSidePanel();
+                      },
+                    },
+                    [
+                      const div(
+                        classes: 'w-3.5 h-3.5 shrink-0',
+                        [AppIcon(AppIcons.tasks)],
+                      ),
+                      span([Component.text('Dispatch Sessions')]),
+                    ],
+                  ),
               ]),
             ],
           ),
@@ -324,35 +350,7 @@ class TaskDetailSidePanel extends StatelessComponent {
             ],
           )
         else
-          div(
-            classes:
-                'p-4 rounded-2xl border flex items-center justify-between shadow-xs bg-amber-500/5 border-amber-500/20',
-            [
-              div(classes: 'flex items-center space-x-3', [
-                div(
-                  classes:
-                      'w-8 h-8 rounded-full flex items-center justify-center text-amber-500 bg-amber-500/10 shrink-0',
-                  [const AppIcon(AppIcons.infoCircle)],
-                ),
-                div([
-                  div(
-                    classes: 'font-bold text-xs text-amber-600 dark:text-amber-400',
-                    [Component.text('No Provider Assigned Yet')],
-                  ),
-                  div(
-                    classes: 'text-[11px] opacity-80',
-                    styles: Styles(color: Color(colorScheme.textMuted)),
-                    [Component.text('Task is currently searching for eligible providers.')],
-                  ),
-                ]),
-              ]),
-              span(
-                classes:
-                    'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap',
-                [Component.text(status == 'DRAFT' ? 'DRAFT' : 'SEARCHING')],
-              ),
-            ],
-          ),
+          _UnassignedProviderBanner(status: status),
       ]),
 
       // ─────────────────────────────────────────────────────────────
@@ -695,6 +693,88 @@ class TaskDetailSidePanel extends StatelessComponent {
                 ],
               ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _UnassignedProviderBanner extends StatelessComponent {
+  final String status;
+
+  const _UnassignedProviderBanner({required this.status});
+
+  @override
+  Component build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final s = status.toUpperCase();
+
+    String title = 'No Provider Assigned Yet';
+    String subtitle = 'Task is currently searching for eligible providers.';
+    String pillText = 'SEARCHING';
+    String boxClasses = 'bg-amber-500/5 border-amber-500/20';
+    String iconColor = 'text-amber-500 bg-amber-500/10';
+    String titleColor = 'text-amber-600 dark:text-amber-400';
+    String pillClasses = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+
+    if (s == 'CANCELLED' || s.contains('CANCEL')) {
+      title = 'No Provider Assigned';
+      subtitle = 'Task was cancelled before a provider could be assigned.';
+      pillText = 'CANCELLED';
+      boxClasses = 'bg-rose-500/5 border-rose-500/20';
+      iconColor = 'text-rose-500 bg-rose-500/10';
+      titleColor = 'text-rose-600 dark:text-rose-400';
+      pillClasses = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+    } else if (s == 'EXPIRED') {
+      title = 'No Provider Assigned';
+      subtitle = 'Dispatch attempts expired without provider acceptance.';
+      pillText = 'EXPIRED';
+      boxClasses = 'bg-rose-500/5 border-rose-500/20';
+      iconColor = 'text-rose-500 bg-rose-500/10';
+      titleColor = 'text-rose-600 dark:text-rose-400';
+      pillClasses = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+    } else if (s == 'DRAFT') {
+      title = 'Unpublished Task';
+      subtitle = 'Task is in draft state and has not been dispatched.';
+      pillText = 'DRAFT';
+      boxClasses = 'bg-slate-500/5 border-slate-500/20';
+      iconColor = 'text-slate-500 bg-slate-500/10';
+      titleColor = 'text-slate-600 dark:text-slate-400';
+      pillClasses = 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+    } else if (s == 'COMPLETED') {
+      title = 'No Provider Record';
+      subtitle = 'Task completed without assignment record.';
+      pillText = 'UNASSIGNED';
+      boxClasses = 'bg-slate-500/5 border-slate-500/20';
+      iconColor = 'text-slate-500 bg-slate-500/10';
+      titleColor = 'text-slate-600 dark:text-slate-400';
+      pillClasses = 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+    }
+
+    return div(
+      classes: 'p-4 rounded-2xl border flex items-center justify-between shadow-xs $boxClasses',
+      [
+        div(classes: 'flex items-center space-x-3 min-w-0 flex-1', [
+          div(
+            classes: 'w-8 h-8 rounded-full flex items-center justify-center shrink-0 $iconColor',
+            [const AppIcon(AppIcons.infoCircle)],
+          ),
+          div(classes: 'min-w-0 flex-1', [
+            div(
+              classes: 'font-bold text-xs truncate $titleColor',
+              [Component.text(title)],
+            ),
+            div(
+              classes: 'text-[11px] opacity-80 truncate',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [Component.text(subtitle)],
+            ),
+          ]),
+        ]),
+        span(
+          classes:
+              'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider border whitespace-nowrap shrink-0 ml-2 $pillClasses',
+          [Component.text(pillText)],
         ),
       ],
     );
