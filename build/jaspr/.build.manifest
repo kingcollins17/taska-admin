@@ -36,6 +36,8 @@ packages/taska_admin/pages/payments.client.module.json
 packages/taska_admin/pages/service_management.client.module.json
 packages/taska_admin/pages/support.client.module.json
 packages/taska_admin/pages/support_ticket_workspace_manager.client.module.json
+packages/taska_admin/pages/system_logs.client.module.json
+packages/taska_admin/pages/system_logs_table.client.module.json
 packages/taska_admin/pages/tasks.client.module.json
 packages/taska_admin/pages/users.client.module.json
 packages/test/dart.js
