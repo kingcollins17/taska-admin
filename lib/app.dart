@@ -23,6 +23,8 @@ import 'pages/payments.dart';
 import 'pages/service_management.dart';
 import 'pages/support.dart';
 import 'pages/support_ticket_workspace_manager.dart';
+import 'pages/system_logs.dart';
+import 'pages/system_logs_table.dart';
 import 'pages/tasks.dart';
 import 'pages/users.dart';
 
@@ -103,6 +105,10 @@ class App extends StatelessComponent {
                 title = 'Administrators & Roles';
               } else if (activePath == '/audit-logs') {
                 title = 'Audit Logs';
+              } else if (activePath == '/system-logs' || activePath == '/system/logs') {
+                title = 'System Dashboard & Metrics';
+              } else if (activePath == '/system-logs/table' || activePath == '/system/logs/table') {
+                title = 'System Log Stream Explorer';
               } else if (activePath == '/settings') {
                 title = 'System Settings';
               }
@@ -221,6 +227,26 @@ class App extends StatelessComponent {
                 path: '/audit-logs',
                 title: 'Taska Admin - Audit Logs',
                 builder: (context, state) => const AuditLogsPage(),
+              ),
+              Route(
+                path: '/system-logs',
+                title: 'Taska Admin - System Dashboard',
+                builder: (context, state) => const SystemLogsPage(),
+              ),
+              Route(
+                path: '/system/logs',
+                title: 'Taska Admin - System Dashboard',
+                builder: (context, state) => const SystemLogsPage(),
+              ),
+              Route(
+                path: '/system-logs/table',
+                title: 'Taska Admin - System Log Stream',
+                builder: (context, state) => const SystemLogsTablePage(),
+              ),
+              Route(
+                path: '/system/logs/table',
+                title: 'Taska Admin - System Log Stream',
+                builder: (context, state) => const SystemLogsTablePage(),
               ),
               Route(
                 path: '/settings',

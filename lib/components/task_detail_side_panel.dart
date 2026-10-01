@@ -350,7 +350,10 @@ class TaskDetailSidePanel extends StatelessComponent {
             ],
           )
         else
-          _UnassignedProviderBanner(status: status),
+          _UnassignedProviderBanner(
+            status: status,
+            dispatchStatus: detail?.dispatchStatus,
+          ),
       ]),
 
       // ─────────────────────────────────────────────────────────────
@@ -701,34 +704,57 @@ class TaskDetailSidePanel extends StatelessComponent {
 
 class _UnassignedProviderBanner extends StatelessComponent {
   final String status;
+  final String? dispatchStatus;
 
-  const _UnassignedProviderBanner({required this.status});
+  const _UnassignedProviderBanner({
+    required this.status,
+    this.dispatchStatus,
+  });
 
   @override
   Component build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final s = status.toUpperCase();
+    final ds = (dispatchStatus ?? '').toUpperCase();
 
-    String title = 'No Provider Assigned Yet';
-    String subtitle = 'Task is currently searching for eligible providers.';
-    String pillText = 'SEARCHING';
-    String boxClasses = 'bg-amber-500/5 border-amber-500/20';
-    String iconColor = 'text-amber-500 bg-amber-500/10';
-    String titleColor = 'text-amber-600 dark:text-amber-400';
-    String pillClasses = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+    String title;
+    String subtitle;
+    String pillText;
+    String boxClasses;
+    String iconColor;
+    String titleColor;
+    String pillClasses;
 
-    if (s == 'CANCELLED' || s.contains('CANCEL')) {
-      title = 'No Provider Assigned';
+    if (s.contains('NO_MATCH') || ds.contains('NO_MATCH')) {
+      title = 'No Provider Matched';
+      subtitle = 'Searching ended because no eligible providers matched or accepted this task.';
+      pillText = 'NO MATCH';
+      boxClasses = 'bg-rose-500/5 border-rose-500/20';
+      iconColor = 'text-rose-500 bg-rose-500/10';
+      titleColor = 'text-rose-600 dark:text-rose-400';
+      pillClasses = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+    } else if (s.contains('CANCEL') || ds.contains('CANCEL')) {
+      title = 'Task Cancelled';
       subtitle = 'Task was cancelled before a provider could be assigned.';
       pillText = 'CANCELLED';
       boxClasses = 'bg-rose-500/5 border-rose-500/20';
       iconColor = 'text-rose-500 bg-rose-500/10';
       titleColor = 'text-rose-600 dark:text-rose-400';
       pillClasses = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
-    } else if (s == 'EXPIRED') {
-      title = 'No Provider Assigned';
+    } else if (s == 'EXPIRED' || s.contains('EXHAUST') || ds.contains('EXHAUST') || ds == 'EXPIRED') {
+      title = 'Dispatch Exhausted';
       subtitle = 'Dispatch attempts expired without provider acceptance.';
-      pillText = 'EXPIRED';
+      pillText = ds.contains('AUTO_EXHAUSTED')
+          ? 'AUTO EXHAUSTED'
+          : (s == 'EXPIRED' ? 'EXPIRED' : 'EXHAUSTED');
+      boxClasses = 'bg-rose-500/5 border-rose-500/20';
+      iconColor = 'text-rose-500 bg-rose-500/10';
+      titleColor = 'text-rose-600 dark:text-rose-400';
+      pillClasses = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+    } else if (s == 'FAILED' || ds == 'FAILED') {
+      title = 'Task Failed';
+      subtitle = 'Task failed before a provider could be assigned.';
+      pillText = 'FAILED';
       boxClasses = 'bg-rose-500/5 border-rose-500/20';
       iconColor = 'text-rose-500 bg-rose-500/10';
       titleColor = 'text-rose-600 dark:text-rose-400';
@@ -745,6 +771,22 @@ class _UnassignedProviderBanner extends StatelessComponent {
       title = 'No Provider Record';
       subtitle = 'Task completed without assignment record.';
       pillText = 'UNASSIGNED';
+      boxClasses = 'bg-slate-500/5 border-slate-500/20';
+      iconColor = 'text-slate-500 bg-slate-500/10';
+      titleColor = 'text-slate-600 dark:text-slate-400';
+      pillClasses = 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+    } else if (s == 'SEARCHING' || s == 'POSTED' || s == 'OPEN' || s == 'DISPATCHING' || s == 'MATCHING' || s == 'UNDER_REVIEW' || s == 'PENDING') {
+      title = 'No Provider Assigned Yet';
+      subtitle = 'Task is currently searching for eligible providers.';
+      pillText = 'SEARCHING';
+      boxClasses = 'bg-amber-500/5 border-amber-500/20';
+      iconColor = 'text-amber-500 bg-amber-500/10';
+      titleColor = 'text-amber-600 dark:text-amber-400';
+      pillClasses = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+    } else {
+      title = 'No Provider Assigned';
+      subtitle = 'No provider is currently assigned to this task.';
+      pillText = s.replaceAll('_', ' ');
       boxClasses = 'bg-slate-500/5 border-slate-500/20';
       iconColor = 'text-slate-500 bg-slate-500/10';
       titleColor = 'text-slate-600 dark:text-slate-400';

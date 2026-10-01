@@ -2,6 +2,7 @@ import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 import 'package:jaspr_router/jaspr_router.dart';
+import 'package:taska_admin/core/designs/colors.dart';
 import 'package:taska_admin/core/utils/currency_formatter.dart';
 import 'package:universal_web/web.dart' as web;
 
@@ -32,10 +33,15 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
   late String _taskIdFilter;
   String _activeTab = 'sessions'; // 'sessions' | 'attempts'
   String? _selectedSessionId;
-  AdminDispatchSession? _selectedSession;
 
   String _sessionStatusFilter = 'ALL';
   String _attemptStatusFilter = 'ALL';
+
+  int _sessionPage = 1;
+  final int _sessionPerPage = 20;
+
+  int _attemptPage = 1;
+  final int _attemptPerPage = 20;
 
   // Redispatch Modal State
   bool _isRedispatchModalOpen = false;
@@ -61,7 +67,8 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
       setState(() {
         _taskIdFilter = component.taskId ?? '';
         _selectedSessionId = null;
-        _selectedSession = null;
+        _sessionPage = 1;
+        _attemptPage = 1;
       });
     }
   }
@@ -93,7 +100,7 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     final second = local.second.toString().padLeft(2, '0');
-    return '$month ${local.day}, ${local.year} at $hour:$minute:$second';
+    return '$month ${local.day}, ${local.year} $hour:$minute:$second';
   }
 
   String _formatCurrency(num? amount) {
@@ -208,9 +215,9 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
     if (_taskIdFilter.trim().isEmpty) return;
     final tId = _taskIdFilter.trim();
     context.invalidate(listDispatchSessionsProvider(
-        ListDispatchSessionsParams(taskId: tId)));
+        ListDispatchSessionsParams(taskId: tId, page: _sessionPage, perPage: _sessionPerPage)));
     context.invalidate(listDispatchAttemptsProvider(
-        ListDispatchAttemptsParams(taskId: tId, dispatchSessionId: _selectedSessionId)));
+        ListDispatchAttemptsParams(taskId: tId, dispatchSessionId: _selectedSessionId, page: _attemptPage, perPage: _attemptPerPage)));
     context.invalidate(adminTaskDetailProvider(tId));
   }
 
@@ -225,37 +232,39 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
 
     final activeTaskId = _taskIdFilter.trim();
 
-    // Fetch Task Detail if available
     final taskDetailAsync = context.watch(adminTaskDetailProvider(activeTaskId));
     final taskDetail = taskDetailAsync.asData?.value;
 
-    // Fetch Sessions for Task
     final sessionsAsync = context.watch(listDispatchSessionsProvider(
       ListDispatchSessionsParams(
         taskId: activeTaskId,
         status: _sessionStatusFilter != 'ALL' ? _sessionStatusFilter : null,
+        page: _sessionPage,
+        perPage: _sessionPerPage,
       ),
     ));
 
-    // Fetch Attempts for Task / Session
     final attemptsAsync = context.watch(listDispatchAttemptsProvider(
       ListDispatchAttemptsParams(
         taskId: activeTaskId,
         dispatchSessionId: _selectedSessionId,
         status: _attemptStatusFilter != 'ALL' ? _attemptStatusFilter : null,
+        page: _attemptPage,
+        perPage: _attemptPerPage,
       ),
     ));
 
-    final sessions = sessionsAsync.asData?.value?.items ?? [];
-    final attempts = attemptsAsync.asData?.value?.items ?? [];
+    final sessionsData = sessionsAsync.asData?.value;
+    final attemptsData = attemptsAsync.asData?.value;
 
-    final totalSessions = sessionsAsync.asData?.value?.total ?? sessions.length;
-    final totalAttempts = attemptsAsync.asData?.value?.total ?? attempts.length;
+    final sessions = sessionsData?.items ?? [];
+    final attempts = attemptsData?.items ?? [];
 
-    return div(classes: 'space-y-6 pb-12', [
-      // ─────────────────────────────────────────────────────────────
+    final totalSessions = sessionsData?.total ?? sessions.length;
+    final totalAttempts = attemptsData?.total ?? attempts.length;
+
+    return div(classes: 'space-y-6 pb-12 animate-fade-in-scaled relative', [
       // Header Navigation & Task Hero Banner
-      // ─────────────────────────────────────────────────────────────
       div(classes: 'flex flex-col space-y-4', [
         // Navigation & Refresh Row
         div(classes: 'flex items-center justify-between', [
@@ -392,15 +401,13 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
         ),
       ]),
 
-      // ─────────────────────────────────────────────────────────────
-      // Two-Tab Header Navigation Bar
-      // ─────────────────────────────────────────────────────────────
+      // Two-Tab Navigation Bar
       div(
         classes: 'border-b flex items-center justify-between gap-4',
         styles: Styles(raw: {'border-color': colorScheme.border}),
         [
           div(classes: 'flex items-center space-x-8', [
-            // Tab 1: Dispatch Sessions
+            // Tab 1: Dispatch Sessions Table
             button(
               type: ButtonType.button,
               classes:
@@ -419,7 +426,7 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
                 },
               },
               [
-                span([Component.text('Dispatch Sessions')]),
+                span([Component.text('Dispatch Sessions Table')]),
                 span(
                   classes:
                       'px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
@@ -432,7 +439,7 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
               ],
             ),
 
-            // Tab 2: Dispatch Attempts
+            // Tab 2: Dispatch Attempts Table
             button(
               type: ButtonType.button,
               classes:
@@ -451,7 +458,7 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
                 },
               },
               [
-                span([Component.text('Dispatch Attempts')]),
+                span([Component.text('Dispatch Attempts Table')]),
                 if (_selectedSessionId != null)
                   span(
                     classes:
@@ -476,24 +483,82 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
         ],
       ),
 
-      // ─────────────────────────────────────────────────────────────
       // Tab Content Rendering
-      // ─────────────────────────────────────────────────────────────
       if (_activeTab == 'sessions')
-        _buildSessionsTabContent(
-          context,
-          colorScheme,
-          isDark,
-          sessionsAsync,
-          sessions,
+        _DispatchSessionsTable(
+          colorScheme: colorScheme,
+          isDark: isDark,
+          sessionsAsync: sessionsAsync,
+          sessions: sessions,
+          total: totalSessions,
+          currentPage: _sessionPage,
+          perPage: _sessionPerPage,
+          statusFilter: _sessionStatusFilter,
+          onStatusChange: (status) {
+            setState(() {
+              _sessionStatusFilter = status;
+              _sessionPage = 1;
+            });
+          },
+          onPreviousPage: () {
+            if (_sessionPage > 1) {
+              setState(() => _sessionPage--);
+            }
+          },
+          onNextPage: () {
+            final maxPage = (totalSessions / _sessionPerPage).ceil().clamp(1, 9999);
+            if (_sessionPage < maxPage) {
+              setState(() => _sessionPage++);
+            }
+          },
+          onSelectSession: (session) {
+            setState(() {
+              _selectedSessionId = session.id;
+              _activeTab = 'attempts';
+              _attemptPage = 1;
+            });
+          },
+          selectedSessionId: _selectedSessionId,
+          copyToClipboard: _copyToClipboard,
+          formatDateTime: _formatDateTime,
         )
       else
-        _buildAttemptsTabContent(
-          context,
-          colorScheme,
-          isDark,
-          attemptsAsync,
-          attempts,
+        _DispatchAttemptsTable(
+          colorScheme: colorScheme,
+          isDark: isDark,
+          attemptsAsync: attemptsAsync,
+          attempts: attempts,
+          total: totalAttempts,
+          currentPage: _attemptPage,
+          perPage: _attemptPerPage,
+          statusFilter: _attemptStatusFilter,
+          onStatusChange: (status) {
+            setState(() {
+              _attemptStatusFilter = status;
+              _attemptPage = 1;
+            });
+          },
+          onPreviousPage: () {
+            if (_attemptPage > 1) {
+              setState(() => _attemptPage--);
+            }
+          },
+          onNextPage: () {
+            final maxPage = (totalAttempts / _attemptPerPage).ceil().clamp(1, 9999);
+            if (_attemptPage < maxPage) {
+              setState(() => _attemptPage++);
+            }
+          },
+          selectedSessionId: _selectedSessionId,
+          onClearSessionFilter: () {
+            setState(() {
+              _selectedSessionId = null;
+              _attemptPage = 1;
+            });
+          },
+          copyToClipboard: _copyToClipboard,
+          formatDateTime: _formatDateTime,
+          formatCurrency: _formatCurrency,
         ),
 
       // Modals
@@ -502,341 +567,6 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
     ]);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Tab 1: Dispatch Sessions View
-  // ─────────────────────────────────────────────────────────────
-  Component _buildSessionsTabContent(
-    BuildContext context,
-    dynamic colorScheme,
-    bool isDark,
-    AsyncValue<PaginatedData<AdminDispatchSession>?> asyncVal,
-    List<AdminDispatchSession> sessions,
-  ) {
-    if (asyncVal.isLoading) {
-      return _buildLoadingState(colorScheme);
-    }
-
-    if (asyncVal.hasError) {
-      return _buildErrorState(colorScheme, asyncVal.error.toString());
-    }
-
-    return div(classes: 'space-y-4', [
-      // Filter Bar
-      div(classes: 'flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border bg-slate-500/5', [
-        div(classes: 'flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-medium', [
-          const div(classes: 'w-3.5 h-3.5', [AppIcon(AppIcons.tasks)]),
-          span([Component.text('Showing ${sessions.length} Dispatch Session(s) for Task')]),
-        ]),
-        div(classes: 'flex items-center space-x-3', [
-          span(classes: 'text-xs font-semibold text-slate-500', [Component.text('Status:')]),
-          select(
-            classes:
-                'px-3 py-1.5 rounded-xl border text-xs font-semibold bg-transparent focus:outline-none transition-colors cursor-pointer',
-            styles: Styles(raw: {'border-color': colorScheme.borderInput}),
-            events: {
-              'change': (e) {
-                final target = e.target as web.HTMLSelectElement;
-                setState(() {
-                  _sessionStatusFilter = target.value;
-                });
-              },
-            },
-            [
-              option(value: 'ALL', selected: _sessionStatusFilter == 'ALL', [Component.text('All Statuses')]),
-              option(value: 'PENDING', selected: _sessionStatusFilter == 'PENDING', [Component.text('Pending')]),
-              option(value: 'COMPLETED', selected: _sessionStatusFilter == 'COMPLETED', [Component.text('Completed')]),
-              option(value: 'FAILED', selected: _sessionStatusFilter == 'FAILED', [Component.text('Failed')]),
-              option(value: 'CANCELLED', selected: _sessionStatusFilter == 'CANCELLED', [Component.text('Cancelled')]),
-            ],
-          ),
-        ]),
-      ]),
-
-      // List Table / Cards
-      if (sessions.isEmpty)
-        div(classes: 'p-12 text-center rounded-2xl border bg-slate-500/5 space-y-3', [
-          div(classes: 'w-12 h-12 rounded-2xl bg-slate-500/10 flex items-center justify-center mx-auto text-slate-400', [
-            const AppIcon(AppIcons.tasks),
-          ]),
-          h4(classes: 'text-base font-bold text-slate-700 dark:text-slate-200', [Component.text('No Dispatch Sessions Found')]),
-          p(classes: 'text-xs text-slate-500 max-w-sm mx-auto', [
-            Component.text('There are currently no dispatch sessions recorded matching this filter for Task ID $_taskIdFilter.'),
-          ]),
-        ])
-      else
-        div(classes: 'space-y-3', [
-          for (final session in sessions)
-            _buildSessionCard(context, colorScheme, isDark, session),
-        ]),
-    ]);
-  }
-
-  Component _buildSessionCard(
-    BuildContext context,
-    dynamic colorScheme,
-    bool isDark,
-    AdminDispatchSession session,
-  ) {
-    final isSelected = _selectedSessionId == session.id;
-
-    return div(
-      classes:
-          'p-5 rounded-2xl border transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden ${
-        isSelected ? 'ring-2 ring-emerald-500/50 bg-emerald-500/5' : ''
-      }',
-      styles: Styles(
-        backgroundColor: Color(colorScheme.surface),
-        raw: {'border-color': isSelected ? colorScheme.primary : colorScheme.border},
-      ),
-      [
-        div(classes: 'flex items-start space-x-4 min-w-0 flex-1', [
-          div(
-            classes:
-                'w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center text-slate-500 dark:text-slate-400',
-            [const AppIcon(AppIcons.tasks)],
-          ),
-          div(classes: 'space-y-1.5 min-w-0 flex-1', [
-            div(classes: 'flex flex-wrap items-center gap-2.5', [
-              span(classes: 'font-bold text-sm text-slate-800 dark:text-slate-100', [
-                Component.text('Session: ${session.id?.substring(0, session.id!.length > 12 ? 12 : session.id!.length) ?? 'N/A'}...'),
-              ]),
-              _buildSessionStatusPill(session.status, isDark),
-              if (session.trigger != null)
-                span(classes: 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300', [
-                  Component.text(session.trigger!),
-                ]),
-            ]),
-            div(classes: 'flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400', [
-              if (session.sequence != null)
-                span([Component.text('Sequence: #${session.sequence}')]),
-              if (session.searchRadiusKm != null) ...[
-                span(classes: 'opacity-40', [Component.text('•')]),
-                span([Component.text('Search Radius: ${session.searchRadiusKm} km')]),
-              ],
-              if (session.batchSize != null) ...[
-                span(classes: 'opacity-40', [Component.text('•')]),
-                span([Component.text('Batch Size: ${session.batchSize}')]),
-              ],
-              span(classes: 'opacity-40', [Component.text('•')]),
-              span([Component.text('Started: ${_formatDateTime(session.startedAt ?? session.createdAt)}')]),
-            ]),
-          ]),
-        ]),
-
-        // View Attempts Action Button
-        div(classes: 'flex items-center space-x-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0', [
-          button(
-            type: ButtonType.button,
-            classes:
-                'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-2 shadow-sm text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 border-none',
-            events: {
-              'click': (_) {
-                setState(() {
-                  _selectedSessionId = session.id;
-                  _selectedSession = session;
-                  _activeTab = 'attempts';
-                });
-              },
-            },
-            [
-              span([Component.text('View Attempts')]),
-              const div(classes: 'w-3.5 h-3.5', [AppIcon(AppIcons.chevronRight)]),
-            ],
-          ),
-        ]),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Tab 2: Dispatch Attempts View
-  // ─────────────────────────────────────────────────────────────
-  Component _buildAttemptsTabContent(
-    BuildContext context,
-    dynamic colorScheme,
-    bool isDark,
-    AsyncValue<PaginatedData<AdminDispatchAttempt>?> asyncVal,
-    List<AdminDispatchAttempt> attempts,
-  ) {
-    if (asyncVal.isLoading) {
-      return _buildLoadingState(colorScheme);
-    }
-
-    if (asyncVal.hasError) {
-      return _buildErrorState(colorScheme, asyncVal.error.toString());
-    }
-
-    return div(classes: 'space-y-4', [
-      // Filter & Session Context Banner
-      div(classes: 'space-y-3', [
-        if (_selectedSessionId != null)
-          div(
-            classes:
-                'flex items-center justify-between p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 text-xs',
-            [
-              div(classes: 'flex items-center space-x-2', [
-                span(classes: 'font-bold text-emerald-800 dark:text-emerald-200', [
-                  Component.text('Filtered Session:'),
-                ]),
-                code(classes: 'px-2 py-0.5 rounded font-mono bg-emerald-500/20 font-bold text-emerald-900 dark:text-emerald-100', [
-                  Component.text(_selectedSessionId!),
-                ]),
-                if (_selectedSession?.trigger != null)
-                  span(classes: 'text-xs text-emerald-700 dark:text-emerald-300 font-medium', [
-                    Component.text('(${_selectedSession!.trigger})'),
-                  ]),
-              ]),
-              button(
-                type: ButtonType.button,
-                classes:
-                    'text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer border-none bg-transparent',
-                events: {
-                  'click': (_) {
-                    setState(() {
-                      _selectedSessionId = null;
-                      _selectedSession = null;
-                    });
-                  },
-                },
-                [Component.text('Clear Session Filter (Show All Task Attempts)')],
-              ),
-            ],
-          ),
-
-        div(classes: 'flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border bg-slate-500/5', [
-          div(classes: 'flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-medium', [
-            const div(classes: 'w-3.5 h-3.5', [AppIcon(AppIcons.tasks)]),
-            span([
-              Component.text(
-                _selectedSessionId != null
-                    ? 'Showing ${attempts.length} Attempt(s) for selected session'
-                    : 'Showing ${attempts.length} Attempt(s) for task',
-              ),
-            ]),
-          ]),
-          div(classes: 'flex items-center space-x-3', [
-            span(classes: 'text-xs font-semibold text-slate-500', [Component.text('Status:')]),
-            select(
-              classes:
-                  'px-3 py-1.5 rounded-xl border text-xs font-semibold bg-transparent focus:outline-none transition-colors cursor-pointer',
-              styles: Styles(raw: {'border-color': colorScheme.borderInput}),
-              events: {
-                'change': (e) {
-                  final target = e.target as web.HTMLSelectElement;
-                  setState(() {
-                    _attemptStatusFilter = target.value;
-                  });
-                },
-              },
-              [
-                option(value: 'ALL', selected: _attemptStatusFilter == 'ALL', [Component.text('All Statuses')]),
-                option(value: 'ACCEPTED', selected: _attemptStatusFilter == 'ACCEPTED', [Component.text('Accepted')]),
-                option(value: 'DECLINED', selected: _attemptStatusFilter == 'DECLINED', [Component.text('Declined')]),
-                option(value: 'EXPIRED', selected: _attemptStatusFilter == 'EXPIRED', [Component.text('Expired')]),
-                option(value: 'PENDING', selected: _attemptStatusFilter == 'PENDING', [Component.text('Pending')]),
-              ],
-            ),
-          ]),
-        ]),
-      ]),
-
-      // List Cards
-      if (attempts.isEmpty)
-        div(classes: 'p-12 text-center rounded-2xl border bg-slate-500/5 space-y-3', [
-          div(classes: 'w-12 h-12 rounded-2xl bg-slate-500/10 flex items-center justify-center mx-auto text-slate-400', [
-            const AppIcon(AppIcons.tasks),
-          ]),
-          h4(classes: 'text-base font-bold text-slate-700 dark:text-slate-200', [Component.text('No Dispatch Attempts Found')]),
-          p(classes: 'text-xs text-slate-500 max-w-sm mx-auto', [
-            Component.text('No matching provider dispatch attempts recorded for this query.'),
-          ]),
-        ])
-      else
-        div(classes: 'space-y-3', [
-          for (final attempt in attempts)
-            _buildAttemptCard(context, colorScheme, isDark, attempt),
-        ]),
-    ]);
-  }
-
-  Component _buildAttemptCard(
-    BuildContext context,
-    dynamic colorScheme,
-    bool isDark,
-    AdminDispatchAttempt attempt,
-  ) {
-    final providerName = (attempt.provider?.firstName != null || attempt.provider?.lastName != null)
-        ? '${attempt.provider?.firstName ?? ''} ${attempt.provider?.lastName ?? ''}'.trim()
-        : null;
-
-    return div(
-      classes: 'p-5 rounded-2xl border transition-all hover:shadow-md space-y-3',
-      styles: Styles(
-        backgroundColor: Color(colorScheme.surface),
-        raw: {'border-color': colorScheme.border},
-      ),
-      [
-        div(classes: 'flex flex-wrap items-center justify-between gap-3', [
-          div(classes: 'flex items-center space-x-3', [
-            _buildAttemptStatusPill(attempt.status, isDark),
-            if (providerName != null && providerName.isNotEmpty)
-              span(classes: 'text-xs font-bold text-slate-800 dark:text-slate-100', [
-                Component.text(providerName),
-              ]),
-            if (attempt.providerId != null)
-              div(classes: 'flex items-center space-x-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium', [
-                span([Component.text('Provider ID:')]),
-                code(classes: 'px-2 py-0.5 rounded font-mono bg-slate-100 dark:bg-slate-800 font-bold', [
-                  Component.text(attempt.providerId!),
-                ]),
-                button(
-                  type: ButtonType.button,
-                  classes: 'p-1 hover:text-emerald-500 transition-colors cursor-pointer border-none bg-transparent',
-                  events: {
-                    'click': (_) => _copyToClipboard(context, attempt.providerId!, 'Provider ID'),
-                  },
-                  [const div(classes: 'w-3 h-3', [AppIcon(AppIcons.copy)])],
-                ),
-              ]),
-          ]),
-          span(classes: 'text-xs text-slate-400 font-medium', [
-            Component.text(_formatDateTime(attempt.pingedAt)),
-          ]),
-        ]),
-
-        div(classes: 'grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1', [
-          div(classes: 'p-2.5 rounded-xl bg-slate-500/5 space-y-0.5', [
-            span(classes: 'text-[10px] text-slate-400 font-bold uppercase tracking-wider', [Component.text('Sequence Order')]),
-            p(classes: 'font-semibold text-slate-700 dark:text-slate-200', [
-              Component.text('#${attempt.sequenceOrder ?? 1}'),
-            ]),
-          ]),
-          div(classes: 'p-2.5 rounded-xl bg-slate-500/5 space-y-0.5', [
-            span(classes: 'text-[10px] text-slate-400 font-bold uppercase tracking-wider', [Component.text('Match Score')]),
-            p(classes: 'font-semibold text-slate-700 dark:text-slate-200', [
-              Component.text('${attempt.matchScore ?? 'N/A'}'),
-            ]),
-          ]),
-          div(classes: 'p-2.5 rounded-xl bg-slate-500/5 space-y-0.5', [
-            span(classes: 'text-[10px] text-slate-400 font-bold uppercase tracking-wider', [Component.text('Offered Payout')]),
-            p(classes: 'font-semibold text-emerald-600 dark:text-emerald-400', [
-              Component.text(_formatCurrency(attempt.offeredPayout)),
-            ]),
-          ]),
-          div(classes: 'p-2.5 rounded-xl bg-slate-500/5 space-y-0.5', [
-            span(classes: 'text-[10px] text-slate-400 font-bold uppercase tracking-wider', [Component.text('Responded At')]),
-            p(classes: 'font-semibold text-slate-700 dark:text-slate-200 truncate', [
-              Component.text(_formatDateTime(attempt.respondedAt)),
-            ]),
-          ]),
-        ]),
-      ],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Helper UI States & Modals
-  // ─────────────────────────────────────────────────────────────
   Component _buildEmptyState(BuildContext context, dynamic colorScheme) {
     return div(classes: 'flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4', [
       div(classes: 'w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-xl', [
@@ -844,7 +574,7 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
       ]),
       h3(classes: 'text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight', [Component.text('No Task Specified')]),
       p(classes: 'text-sm text-slate-500 dark:text-slate-400 max-w-md leading-relaxed', [
-        Component.text('Dispatch sessions and attempts are strictly tied to specific tasks. Please navigate to Tasks Management and click "Dispatch Sessions" on a task detail side panel to view its logs.'),
+        Component.text('Dispatch sessions and attempts are strictly tied to specific tasks. Please navigate to Tasks Management and select "Dispatch Sessions" on a task to view its logs.'),
       ]),
       button(
         type: ButtonType.button,
@@ -854,26 +584,6 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
           'click': (_) => Router.of(context).push('/tasks'),
         },
         [Component.text('Go to Tasks Management')],
-      ),
-    ]);
-  }
-
-  Component _buildLoadingState(dynamic colorScheme) {
-    return div(classes: 'p-12 text-center rounded-2xl border bg-slate-500/5 space-y-3', [
-      div(classes: 'w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mx-auto', []),
-      p(classes: 'text-xs text-slate-500 font-medium', [Component.text('Loading dispatch records...')]),
-    ]);
-  }
-
-  Component _buildErrorState(dynamic colorScheme, String message) {
-    return div(classes: 'p-8 rounded-2xl border bg-rose-500/10 border-rose-500/20 text-center space-y-2', [
-      h4(classes: 'text-sm font-bold text-rose-600 dark:text-rose-400', [Component.text('Failed to load dispatch records')]),
-      p(classes: 'text-xs text-rose-500 max-w-md mx-auto', [Component.text(message)]),
-      button(
-        type: ButtonType.button,
-        classes: 'px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-700 dark:text-rose-300 hover:bg-rose-500/30 transition-colors cursor-pointer border-none',
-        events: {'click': (_) => _refreshData()},
-        [Component.text('Try Again')],
       ),
     ]);
   }
@@ -895,39 +605,6 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
     );
   }
 
-  Component _buildSessionStatusPill(String? status, bool isDark) {
-    final s = (status ?? 'PENDING').toUpperCase();
-    String colorClasses = 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
-    if (s == 'COMPLETED') {
-      colorClasses = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
-    } else if (s == 'FAILED' || s == 'CANCELLED') {
-      colorClasses = 'bg-rose-500/15 text-rose-600 dark:text-rose-400';
-    }
-
-    return span(
-      classes: 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase $colorClasses',
-      [Component.text(s)],
-    );
-  }
-
-  Component _buildAttemptStatusPill(String? status, bool isDark) {
-    final s = (status ?? 'PENDING').toUpperCase();
-    String colorClasses = 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
-    if (s == 'ACCEPTED') {
-      colorClasses = 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
-    } else if (s == 'DECLINED' || s == 'EXPIRED') {
-      colorClasses = 'bg-rose-500/15 text-rose-600 dark:text-rose-400';
-    }
-
-    return span(
-      classes: 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase $colorClasses',
-      [Component.text(s)],
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // Redispatch Modal
-  // ─────────────────────────────────────────────────────────────
   Component _buildRedispatchModal(BuildContext context, dynamic colorScheme) {
     return div(
       classes:
@@ -1010,9 +687,6 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Cancel Task Modal
-  // ─────────────────────────────────────────────────────────────
   Component _buildCancelTaskModal(BuildContext context, dynamic colorScheme) {
     return div(
       classes:
@@ -1109,5 +783,718 @@ class _DispatchSessionsPageState extends State<DispatchSessionsPage> {
         ),
       ],
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Dispatch Sessions Table Component
+// ─────────────────────────────────────────────────────────────
+
+class _DispatchSessionsTable extends StatelessComponent {
+  final AppColorScheme colorScheme;
+  final bool isDark;
+  final AsyncValue<PaginatedData<AdminDispatchSession>?> sessionsAsync;
+  final List<AdminDispatchSession> sessions;
+  final int total;
+  final int currentPage;
+  final int perPage;
+  final String statusFilter;
+  final void Function(String status) onStatusChange;
+  final void Function() onPreviousPage;
+  final void Function() onNextPage;
+  final void Function(AdminDispatchSession session) onSelectSession;
+  final String? selectedSessionId;
+  final void Function(BuildContext context, String text, String label) copyToClipboard;
+  final String Function(DateTime? dt) formatDateTime;
+
+  const _DispatchSessionsTable({
+    required this.colorScheme,
+    required this.isDark,
+    required this.sessionsAsync,
+    required this.sessions,
+    required this.total,
+    required this.currentPage,
+    required this.perPage,
+    required this.statusFilter,
+    required this.onStatusChange,
+    required this.onPreviousPage,
+    required this.onNextPage,
+    required this.onSelectSession,
+    required this.selectedSessionId,
+    required this.copyToClipboard,
+    required this.formatDateTime,
+  });
+
+  @override
+  Component build(BuildContext context) {
+    return div(
+      classes: 'border rounded-2xl shadow-sm transition-all overflow-hidden p-5 sm:p-6 space-y-5 min-w-0',
+      styles: Styles(
+        backgroundColor: Color(colorScheme.surface),
+        raw: {'border-color': colorScheme.border},
+      ),
+      [
+        // Filter Bar
+        div(classes: 'flex flex-col sm:flex-row sm:items-center justify-between gap-4', [
+          div(classes: 'flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-medium', [
+            const div(classes: 'w-4 h-4', [AppIcon(AppIcons.tasks)]),
+            span([Component.text('Dispatch Sessions Log Records')]),
+          ]),
+
+          div(classes: 'flex flex-wrap items-center gap-2', [
+            span(
+              classes: 'text-[11px] font-bold uppercase tracking-wider mr-1',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [Component.text('Status:')],
+            ),
+            for (final status in ['ALL', 'PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'])
+              button(
+                onClick: () => onStatusChange(status),
+                classes:
+                    'px-3 py-1.5 rounded-lg transition-all cursor-pointer text-[11px] font-bold border',
+                styles: statusFilter == status
+                    ? Styles(
+                        backgroundColor: Color(colorScheme.primary),
+                        color: Color('#FFFFFF'),
+                        raw: {'border-color': colorScheme.primary},
+                      )
+                    : Styles(
+                        backgroundColor: Color(colorScheme.inputBg),
+                        color: Color(colorScheme.textSecondary),
+                        raw: {'border-color': colorScheme.borderInput},
+                      ),
+                [Component.text(status)],
+              ),
+          ]),
+        ]),
+
+        // Content / Table
+        sessionsAsync.when(
+          data: (_) {
+            if (sessions.isEmpty) {
+              return _buildEmptySessionsState(colorScheme);
+            }
+
+            return div(classes: 'space-y-5', [
+              div(
+                classes: 'overflow-x-auto rounded-xl border transition-colors',
+                styles: Styles(raw: {'border-color': colorScheme.border}),
+                [
+                  table(classes: 'w-full min-w-[900px] text-left border-collapse text-xs', [
+                    thead(
+                      classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
+                      styles: Styles(
+                        backgroundColor: Color(colorScheme.inputBg),
+                        color: Color(colorScheme.textMuted),
+                        raw: {'border-color': colorScheme.border},
+                      ),
+                      [
+                        tr([
+                          th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Session ID')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Status')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Trigger')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Sequence')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Radius')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Batch Size')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Started At')]),
+                          th(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [Component.text('Actions')]),
+                        ]),
+                      ],
+                    ),
+                    tbody(
+                      classes: 'divide-y font-medium',
+                      styles: Styles(
+                        color: Color(colorScheme.textPrimary),
+                        raw: {'border-color': colorScheme.border},
+                      ),
+                      [
+                        for (final session in sessions)
+                          tr(
+                            classes:
+                                'hover:opacity-90 transition-colors cursor-pointer ${selectedSessionId == session.id ? 'bg-emerald-500/10 font-bold' : ''}',
+                            events: {
+                              'click': (_) => onSelectSession(session),
+                            },
+                            [
+                              // Session ID
+                              td(classes: 'p-3.5 pl-4 font-mono text-xs whitespace-nowrap', [
+                                div(classes: 'flex items-center space-x-1.5', [
+                                  span(
+                                    classes: 'font-bold text-xs truncate max-w-[160px]',
+                                    styles: Styles(color: Color(colorScheme.textHeading)),
+                                    [Component.text(session.id ?? 'N/A')],
+                                  ),
+                                  if (session.id != null)
+                                    button(
+                                      type: ButtonType.button,
+                                      onClick: () => copyToClipboard(context, session.id!, 'Session ID'),
+                                      classes:
+                                          'p-1 hover:text-emerald-500 transition-colors cursor-pointer border-none bg-transparent',
+                                      [const div(classes: 'w-3 h-3', [AppIcon(AppIcons.copy)])],
+                                    ),
+                                ]),
+                              ]),
+                              // Status
+                              td(classes: 'p-3.5 whitespace-nowrap', [
+                                _buildStatusPill(session.status, isDark),
+                              ]),
+                              // Trigger
+                              td(classes: 'p-3.5 whitespace-nowrap', [
+                                span(
+                                  classes:
+                                      'px-2.5 py-1 rounded-lg text-[10.5px] font-bold uppercase tracking-wider border font-mono',
+                                  styles: Styles(
+                                    backgroundColor: Color(colorScheme.inputBg),
+                                    color: Color(colorScheme.textSecondary),
+                                    raw: {'border-color': colorScheme.borderInput},
+                                  ),
+                                  [Component.text(session.trigger ?? 'N/A')],
+                                ),
+                              ]),
+                              // Sequence
+                              td(
+                                classes: 'p-3.5 font-mono text-xs whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textSecondary)),
+                                [Component.text('#${session.sequence ?? 1}')],
+                              ),
+                              // Radius
+                              td(
+                                classes: 'p-3.5 font-mono text-xs whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textSecondary)),
+                                [Component.text('${session.searchRadiusKm ?? '—'} km')],
+                              ),
+                              // Batch Size
+                              td(
+                                classes: 'p-3.5 font-mono text-xs whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textSecondary)),
+                                [Component.text('${session.batchSize ?? '—'}')],
+                              ),
+                              // Started At
+                              td(
+                                classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textMuted)),
+                                [Component.text(formatDateTime(session.startedAt ?? session.createdAt))],
+                              ),
+                              // Action Button
+                              td(classes: 'p-3.5 pr-4 text-center whitespace-nowrap', [
+                                button(
+                                  onClick: () => onSelectSession(session),
+                                  classes:
+                                      'text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer transition-all border-none whitespace-nowrap shrink-0',
+                                  styles: Styles(backgroundColor: Color(colorScheme.primary)),
+                                  [Component.text('View Attempts')],
+                                ),
+                              ]),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ]),
+                ],
+              ),
+
+              // Pagination Footer
+              _TablePaginationFooter(
+                colorScheme: colorScheme,
+                total: total,
+                perPage: perPage,
+                currentPage: currentPage,
+                onPreviousPage: onPreviousPage,
+                onNextPage: onNextPage,
+              ),
+            ]);
+          },
+          loading: () => _buildShimmerTable(colorScheme),
+          error: (err, _) => _buildErrorCard(colorScheme, err.toString()),
+        ),
+      ],
+    );
+  }
+
+  Component _buildStatusPill(String? status, bool isDark) {
+    final s = (status ?? 'PENDING').toUpperCase();
+    Color bg;
+    Color fg;
+    String border;
+
+    if (s == 'COMPLETED') {
+      bg = isDark ? Color.rgba(16, 185, 129, 0.18) : Color.rgba(16, 185, 129, 0.1);
+      fg = isDark ? Color.rgba(110, 231, 183, 1.0) : Color.rgba(4, 120, 87, 1.0);
+      border = isDark ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.25)';
+    } else if (s == 'FAILED' || s == 'CANCELLED') {
+      bg = isDark ? Color.rgba(244, 63, 94, 0.18) : Color.rgba(244, 63, 94, 0.1);
+      fg = isDark ? Color.rgba(253, 164, 175, 1.0) : Color.rgba(190, 18, 60, 1.0);
+      border = isDark ? 'rgba(244, 63, 94, 0.4)' : 'rgba(244, 63, 94, 0.25)';
+    } else {
+      bg = isDark ? Color.rgba(245, 158, 11, 0.18) : Color.rgba(245, 158, 11, 0.1);
+      fg = isDark ? Color.rgba(252, 211, 77, 1.0) : Color.rgba(180, 83, 9, 1.0);
+      border = isDark ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.25)';
+    }
+
+    return span(
+      classes:
+          'px-2.5 py-1 rounded-lg text-[10.5px] font-black tracking-wider uppercase border font-mono whitespace-nowrap',
+      styles: Styles(
+        backgroundColor: bg,
+        color: fg,
+        raw: {'border-color': border},
+      ),
+      [Component.text(s)],
+    );
+  }
+
+  Component _buildEmptySessionsState(AppColorScheme colorScheme) {
+    return div(
+      classes: 'py-12 text-center space-y-3 border rounded-xl p-6',
+      styles: Styles(
+        backgroundColor: Color(colorScheme.inputBg),
+        raw: {'border-color': colorScheme.borderInput},
+      ),
+      [
+        div(
+          classes: 'w-12 h-12 rounded-full mx-auto flex items-center justify-center opacity-60',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.surface),
+            color: Color(colorScheme.textMuted),
+          ),
+          [const AppIcon(AppIcons.tasks)],
+        ),
+        p(
+          classes: 'text-sm font-bold',
+          styles: Styles(color: Color(colorScheme.textHeading)),
+          [Component.text('No dispatch sessions recorded')],
+        ),
+        p(
+          classes: 'text-xs font-medium max-w-sm mx-auto',
+          styles: Styles(color: Color(colorScheme.textMuted)),
+          [Component.text('No sessions matched your status filter criteria for this task.')],
+        ),
+      ],
+    );
+  }
+
+  Component _buildShimmerTable(AppColorScheme colorScheme) {
+    return div(classes: 'space-y-3 animate-pulse py-4', [
+      for (var i = 0; i < 5; i++)
+        div(
+          classes: 'h-14 rounded-xl border',
+          styles: Styles(
+            backgroundColor:
+                colorScheme.isDark ? Color.rgba(31, 45, 39, 0.8) : Color.rgba(226, 232, 240, 0.8),
+            raw: {'border-color': colorScheme.border},
+          ),
+          [],
+        ),
+    ]);
+  }
+
+  Component _buildErrorCard(AppColorScheme colorScheme, String message) {
+    return div(
+      classes: 'py-8 text-center space-y-2 border rounded-xl p-6 border-rose-500/30 bg-rose-500/5',
+      [
+        p(classes: 'text-xs font-bold text-rose-500', [Component.text('Failed to load sessions: $message')]),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Dispatch Attempts Table Component
+// ─────────────────────────────────────────────────────────────
+
+class _DispatchAttemptsTable extends StatelessComponent {
+  final AppColorScheme colorScheme;
+  final bool isDark;
+  final AsyncValue<PaginatedData<AdminDispatchAttempt>?> attemptsAsync;
+  final List<AdminDispatchAttempt> attempts;
+  final int total;
+  final int currentPage;
+  final int perPage;
+  final String statusFilter;
+  final void Function(String status) onStatusChange;
+  final void Function() onPreviousPage;
+  final void Function() onNextPage;
+  final String? selectedSessionId;
+  final void Function() onClearSessionFilter;
+  final void Function(BuildContext context, String text, String label) copyToClipboard;
+  final String Function(DateTime? dt) formatDateTime;
+  final String Function(num? amount) formatCurrency;
+
+  const _DispatchAttemptsTable({
+    required this.colorScheme,
+    required this.isDark,
+    required this.attemptsAsync,
+    required this.attempts,
+    required this.total,
+    required this.currentPage,
+    required this.perPage,
+    required this.statusFilter,
+    required this.onStatusChange,
+    required this.onPreviousPage,
+    required this.onNextPage,
+    required this.selectedSessionId,
+    required this.onClearSessionFilter,
+    required this.copyToClipboard,
+    required this.formatDateTime,
+    required this.formatCurrency,
+  });
+
+  @override
+  Component build(BuildContext context) {
+    return div(
+      classes: 'border rounded-2xl shadow-sm transition-all overflow-hidden p-5 sm:p-6 space-y-5 min-w-0',
+      styles: Styles(
+        backgroundColor: Color(colorScheme.surface),
+        raw: {'border-color': colorScheme.border},
+      ),
+      [
+        // Active Filter Context Banner
+        if (selectedSessionId != null)
+          div(
+            classes:
+                'flex items-center justify-between p-3.5 rounded-xl border bg-emerald-500/10 border-emerald-500/20 text-xs',
+            [
+              div(classes: 'flex items-center space-x-2', [
+                span(classes: 'font-bold text-emerald-800 dark:text-emerald-200', [
+                  Component.text('Filtered Session:'),
+                ]),
+                code(classes: 'px-2 py-0.5 rounded font-mono bg-emerald-500/20 font-bold text-emerald-900 dark:text-emerald-100', [
+                  Component.text(selectedSessionId!),
+                ]),
+              ]),
+              button(
+                type: ButtonType.button,
+                onClick: onClearSessionFilter,
+                classes:
+                    'text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer border-none bg-transparent',
+                [Component.text('Clear Session Filter (Show All Task Attempts)')],
+              ),
+            ],
+          ),
+
+        // Filter Bar
+        div(classes: 'flex flex-col sm:flex-row sm:items-center justify-between gap-4', [
+          div(classes: 'flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 font-medium', [
+            const div(classes: 'w-4 h-4', [AppIcon(AppIcons.tasks)]),
+            span([Component.text('Dispatch Attempts Log Records')]),
+          ]),
+
+          div(classes: 'flex flex-wrap items-center gap-2', [
+            span(
+              classes: 'text-[11px] font-bold uppercase tracking-wider mr-1',
+              styles: Styles(color: Color(colorScheme.textMuted)),
+              [Component.text('Status:')],
+            ),
+            for (final status in ['ALL', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'PENDING'])
+              button(
+                onClick: () => onStatusChange(status),
+                classes:
+                    'px-3 py-1.5 rounded-lg transition-all cursor-pointer text-[11px] font-bold border',
+                styles: statusFilter == status
+                    ? Styles(
+                        backgroundColor: Color(colorScheme.primary),
+                        color: Color('#FFFFFF'),
+                        raw: {'border-color': colorScheme.primary},
+                      )
+                    : Styles(
+                        backgroundColor: Color(colorScheme.inputBg),
+                        color: Color(colorScheme.textSecondary),
+                        raw: {'border-color': colorScheme.borderInput},
+                      ),
+                [Component.text(status)],
+              ),
+          ]),
+        ]),
+
+        // Content / Table
+        attemptsAsync.when(
+          data: (_) {
+            if (attempts.isEmpty) {
+              return _buildEmptyAttemptsState(colorScheme);
+            }
+
+            return div(classes: 'space-y-5', [
+              div(
+                classes: 'overflow-x-auto rounded-xl border transition-colors',
+                styles: Styles(raw: {'border-color': colorScheme.border}),
+                [
+                  table(classes: 'w-full min-w-[950px] text-left border-collapse text-xs', [
+                    thead(
+                      classes: 'uppercase tracking-wider text-[10.5px] border-b font-bold',
+                      styles: Styles(
+                        backgroundColor: Color(colorScheme.inputBg),
+                        color: Color(colorScheme.textMuted),
+                        raw: {'border-color': colorScheme.border},
+                      ),
+                      [
+                        tr([
+                          th(classes: 'p-3.5 pl-4 whitespace-nowrap', [Component.text('Status')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Provider')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Sequence')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Match Score')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Offered Payout')]),
+                          th(classes: 'p-3.5 whitespace-nowrap', [Component.text('Pinged At')]),
+                          th(classes: 'p-3.5 pr-4 whitespace-nowrap', [Component.text('Responded At')]),
+                        ]),
+                      ],
+                    ),
+                    tbody(
+                      classes: 'divide-y font-medium',
+                      styles: Styles(
+                        color: Color(colorScheme.textPrimary),
+                        raw: {'border-color': colorScheme.border},
+                      ),
+                      [
+                        for (final attempt in attempts)
+                          tr(
+                            classes: 'hover:opacity-90 transition-colors',
+                            [
+                              // Status
+                              td(classes: 'p-3.5 pl-4 whitespace-nowrap', [
+                                _buildAttemptStatusPill(attempt.status, isDark),
+                              ]),
+                              // Provider
+                              td(classes: 'p-3.5 whitespace-nowrap', [
+                                div(classes: 'flex flex-col space-y-0.5 min-w-0', [
+                                  span(
+                                    classes: 'font-bold text-xs truncate max-w-xs',
+                                    styles: Styles(color: Color(colorScheme.textHeading)),
+                                    [
+                                      Component.text(
+                                        (attempt.provider?.firstName != null || attempt.provider?.lastName != null)
+                                            ? '${attempt.provider?.firstName ?? ''} ${attempt.provider?.lastName ?? ''}'.trim()
+                                            : (attempt.providerId ?? 'Provider Candidate'),
+                                      ),
+                                    ],
+                                  ),
+                                  if (attempt.providerId != null)
+                                    div(classes: 'flex items-center space-x-1 text-[11px] font-mono', [
+                                      span(
+                                        classes: 'truncate max-w-[140px]',
+                                        styles: Styles(color: Color(colorScheme.textMuted)),
+                                        [Component.text('ID: ${attempt.providerId}')],
+                                      ),
+                                      button(
+                                        type: ButtonType.button,
+                                        onClick: () => copyToClipboard(context, attempt.providerId!, 'Provider ID'),
+                                        classes:
+                                            'p-0.5 hover:text-emerald-500 transition-colors cursor-pointer border-none bg-transparent',
+                                        [const div(classes: 'w-3 h-3', [AppIcon(AppIcons.copy)])],
+                                      ),
+                                    ]),
+                                ]),
+                              ]),
+                              // Sequence Order
+                              td(
+                                classes: 'p-3.5 font-mono text-xs whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textSecondary)),
+                                [Component.text('#${attempt.sequenceOrder ?? 1}')],
+                              ),
+                              // Match Score
+                              td(
+                                classes: 'p-3.5 font-mono text-xs whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textSecondary)),
+                                [Component.text('${attempt.matchScore ?? 'N/A'}')],
+                              ),
+                              // Offered Payout
+                              td(
+                                classes: 'p-3.5 font-mono text-xs font-bold whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.primary)),
+                                [Component.text(formatCurrency(attempt.offeredPayout))],
+                              ),
+                              // Pinged At
+                              td(
+                                classes: 'p-3.5 text-xs font-medium whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textMuted)),
+                                [Component.text(formatDateTime(attempt.pingedAt))],
+                              ),
+                              // Responded At
+                              td(
+                                classes: 'p-3.5 pr-4 text-xs font-medium whitespace-nowrap',
+                                styles: Styles(color: Color(colorScheme.textMuted)),
+                                [Component.text(formatDateTime(attempt.respondedAt))],
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ]),
+                ],
+              ),
+
+              // Pagination Footer
+              _TablePaginationFooter(
+                colorScheme: colorScheme,
+                total: total,
+                perPage: perPage,
+                currentPage: currentPage,
+                onPreviousPage: onPreviousPage,
+                onNextPage: onNextPage,
+              ),
+            ]);
+          },
+          loading: () => _buildShimmerTable(colorScheme),
+          error: (err, _) => _buildErrorCard(colorScheme, err.toString()),
+        ),
+      ],
+    );
+  }
+
+  Component _buildAttemptStatusPill(String? status, bool isDark) {
+    final s = (status ?? 'PENDING').toUpperCase();
+    Color bg;
+    Color fg;
+    String border;
+
+    if (s == 'ACCEPTED') {
+      bg = isDark ? Color.rgba(16, 185, 129, 0.18) : Color.rgba(16, 185, 129, 0.1);
+      fg = isDark ? Color.rgba(110, 231, 183, 1.0) : Color.rgba(4, 120, 87, 1.0);
+      border = isDark ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.25)';
+    } else if (s == 'DECLINED' || s == 'EXPIRED') {
+      bg = isDark ? Color.rgba(244, 63, 94, 0.18) : Color.rgba(244, 63, 94, 0.1);
+      fg = isDark ? Color.rgba(253, 164, 175, 1.0) : Color.rgba(190, 18, 60, 1.0);
+      border = isDark ? 'rgba(244, 63, 94, 0.4)' : 'rgba(244, 63, 94, 0.25)';
+    } else {
+      bg = isDark ? Color.rgba(245, 158, 11, 0.18) : Color.rgba(245, 158, 11, 0.1);
+      fg = isDark ? Color.rgba(252, 211, 77, 1.0) : Color.rgba(180, 83, 9, 1.0);
+      border = isDark ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.25)';
+    }
+
+    return span(
+      classes:
+          'px-2.5 py-1 rounded-lg text-[10.5px] font-black tracking-wider uppercase border font-mono whitespace-nowrap',
+      styles: Styles(
+        backgroundColor: bg,
+        color: fg,
+        raw: {'border-color': border},
+      ),
+      [Component.text(s)],
+    );
+  }
+
+  Component _buildEmptyAttemptsState(AppColorScheme colorScheme) {
+    return div(
+      classes: 'py-12 text-center space-y-3 border rounded-xl p-6',
+      styles: Styles(
+        backgroundColor: Color(colorScheme.inputBg),
+        raw: {'border-color': colorScheme.borderInput},
+      ),
+      [
+        div(
+          classes: 'w-12 h-12 rounded-full mx-auto flex items-center justify-center opacity-60',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.surface),
+            color: Color(colorScheme.textMuted),
+          ),
+          [const AppIcon(AppIcons.tasks)],
+        ),
+        p(
+          classes: 'text-sm font-bold',
+          styles: Styles(color: Color(colorScheme.textHeading)),
+          [Component.text('No dispatch attempts recorded')],
+        ),
+        p(
+          classes: 'text-xs font-medium max-w-sm mx-auto',
+          styles: Styles(color: Color(colorScheme.textMuted)),
+          [Component.text('No dispatch attempts matched your status filter criteria for this query.')],
+        ),
+      ],
+    );
+  }
+
+  Component _buildShimmerTable(AppColorScheme colorScheme) {
+    return div(classes: 'space-y-3 animate-pulse py-4', [
+      for (var i = 0; i < 5; i++)
+        div(
+          classes: 'h-14 rounded-xl border',
+          styles: Styles(
+            backgroundColor:
+                colorScheme.isDark ? Color.rgba(31, 45, 39, 0.8) : Color.rgba(226, 232, 240, 0.8),
+            raw: {'border-color': colorScheme.border},
+          ),
+          [],
+        ),
+    ]);
+  }
+
+  Component _buildErrorCard(AppColorScheme colorScheme, String message) {
+    return div(
+      classes: 'py-8 text-center space-y-2 border rounded-xl p-6 border-rose-500/30 bg-rose-500/5',
+      [
+        p(classes: 'text-xs font-bold text-rose-500', [Component.text('Failed to load attempts: $message')]),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Reusable Table Pagination Footer
+// ─────────────────────────────────────────────────────────────
+
+class _TablePaginationFooter extends StatelessComponent {
+  final AppColorScheme colorScheme;
+  final int total;
+  final int perPage;
+  final int currentPage;
+  final void Function() onPreviousPage;
+  final void Function() onNextPage;
+
+  const _TablePaginationFooter({
+    required this.colorScheme,
+    required this.total,
+    required this.perPage,
+    required this.currentPage,
+    required this.onPreviousPage,
+    required this.onNextPage,
+  });
+
+  @override
+  Component build(BuildContext context) {
+    final start = total == 0 ? 0 : (currentPage - 1) * perPage + 1;
+    final end = (currentPage * perPage).clamp(0, total);
+    final maxPage = (total / perPage).ceil().clamp(1, 9999);
+
+    return div(classes: 'flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2', [
+      span(
+        classes: 'text-xs font-medium',
+        styles: Styles(color: Color(colorScheme.textMuted)),
+        [
+          Component.text('Showing $start to $end of $total records'),
+        ],
+      ),
+      div(classes: 'flex items-center space-x-2', [
+        button(
+          onClick: onPreviousPage,
+          disabled: currentPage <= 1,
+          classes: currentPage <= 1
+              ? 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-not-allowed border opacity-40'
+              : 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border hover:opacity-80 active:scale-95',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.inputBg),
+            color: Color(colorScheme.textPrimary),
+            raw: {'border-color': colorScheme.borderInput},
+          ),
+          [Component.text('Previous')],
+        ),
+        span(
+          classes: 'text-xs font-bold px-2 font-mono',
+          styles: Styles(color: Color(colorScheme.textSecondary)),
+          [Component.text('$currentPage / $maxPage')],
+        ),
+        button(
+          onClick: onNextPage,
+          disabled: currentPage >= maxPage,
+          classes: currentPage >= maxPage
+              ? 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-not-allowed border opacity-40'
+              : 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border hover:opacity-80 active:scale-95',
+          styles: Styles(
+            backgroundColor: Color(colorScheme.inputBg),
+            color: Color(colorScheme.textPrimary),
+            raw: {'border-color': colorScheme.borderInput},
+          ),
+          [Component.text('Next')],
+        ),
+      ]),
+    ]);
   }
 }

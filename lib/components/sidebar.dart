@@ -3,6 +3,8 @@ import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
 import 'package:jaspr_router/jaspr_router.dart';
 
+import 'confirmation_dialog.dart';
+
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
@@ -121,6 +123,8 @@ class Sidebar extends StatelessComponent {
                       isActive: activePath == '/administrators' || activePath == '/admin/administrators'),
                   _NavItemData('Audit Logs', '/audit-logs', AppIcons.auditLogs,
                       isActive: activePath == '/audit-logs' || activePath == '/admin/audit-logs'),
+                  _NavItemData('System Logs', '/system-logs', AppIcons.security,
+                      isActive: activePath == '/system-logs' || activePath == '/system/logs'),
                 ],
               ),
 
@@ -138,11 +142,24 @@ class Sidebar extends StatelessComponent {
                   [
                     button(
                       type: ButtonType.button,
-                      onClick: () {
-                        localStorage.removeItem('accessToken');
-                        localStorage.removeItem('refreshToken');
-                        context.invalidate(isAuthenticatedProvider);
-                        Router.of(context).push('/login');
+                      onClick: () async {
+                        final confirmed = await ConfirmationDialog.show(
+                          context,
+                          title: 'Confirm Logout',
+                          message:
+                              'Are you sure you want to log out of your Taska Admin Portal account?',
+                          confirmText: 'Log Out',
+                          cancelText: 'Stay Logged In',
+                          isDestructive: true,
+                          icon: AppIcons.logout,
+                        );
+
+                        if (confirmed == true) {
+                          localStorage.removeItem('accessToken');
+                          localStorage.removeItem('refreshToken');
+                          context.invalidate(isAuthenticatedProvider);
+                          Router.of(context).push('/login');
+                        }
                       },
                       classes:
                           'w-full rounded-xl px-3 py-2 flex items-center space-x-3 transition-colors text-xs md:text-sm hover:opacity-80 cursor-pointer border-none bg-transparent',

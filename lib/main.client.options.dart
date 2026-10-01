@@ -22,6 +22,9 @@ import 'package:taska_admin/pages/service_management.dart'
 import 'package:taska_admin/pages/support.dart' deferred as _support;
 import 'package:taska_admin/pages/support_ticket_workspace_manager.dart'
     deferred as _support_ticket_workspace_manager;
+import 'package:taska_admin/pages/system_logs.dart' deferred as _system_logs;
+import 'package:taska_admin/pages/system_logs_table.dart'
+    deferred as _system_logs_table;
 import 'package:taska_admin/pages/tasks.dart' deferred as _tasks;
 import 'package:taska_admin/pages/users.dart' deferred as _users;
 import 'package:taska_admin/app.dart' deferred as _app;
@@ -89,6 +92,14 @@ ClientOptions get defaultClientOptions => ClientOptions(
       (p) =>
           _support_ticket_workspace_manager.SupportTicketWorkspaceManagerPage(),
       loader: _support_ticket_workspace_manager.loadLibrary,
+    ),
+    'system_logs': ClientLoader(
+      (p) => _system_logs.SystemLogsPage(),
+      loader: _system_logs.loadLibrary,
+    ),
+    'system_logs_table': ClientLoader(
+      (p) => _system_logs_table.SystemLogsTablePage(),
+      loader: _system_logs_table.loadLibrary,
     ),
     'tasks': ClientLoader(
       (p) => _tasks.TasksPage(),
