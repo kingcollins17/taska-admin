@@ -7,6 +7,7 @@ import '../clients/admin_support_client.dart';
 import '../models/clients/base_response.dart';
 import '../models/clients/support/admin_add_support_internal_note_body.dart';
 import '../models/clients/support/admin_assign_support_case_body.dart';
+import '../models/clients/support/admin_attach_user_to_case_body.dart';
 import '../models/clients/support/admin_resolve_support_case_body.dart';
 import '../models/clients/support/admin_send_support_message_body.dart';
 import '../models/clients/support/admin_support_attachment_item.dart';
@@ -476,6 +477,37 @@ class AdminSupportManagement extends AsyncNotifier<void> {
         onSuccess?.call();
       } else {
         final errorMsg = response.message ?? response.detail ?? 'Failed to escalate support case';
+        state = AsyncError(errorMsg, StackTrace.current);
+        onError?.call(errorMsg);
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handle(e, stackTrace);
+      final errorMsg = _extractErrorMessage(e);
+      state = AsyncError(errorMsg, stackTrace);
+      onError?.call(errorMsg);
+    }
+  }
+
+  Future<void> attachUser(
+    String caseId,
+    AdminAttachUserToCaseBody body, {
+    void Function()? onSuccess,
+    void Function(String message)? onError,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final client = ref.read(adminSupportClientProvider);
+      final response = await client.attachUser(caseId, body);
+
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        state = const AsyncData(null);
+        ref.invalidate(adminSupportCaseDetailProvider(caseId));
+        ref.invalidate(adminSupportTimelineProvider(GetAdminSupportTimelineParams(caseId: caseId)));
+        ref.invalidate(adminMyAssignedSupportCasesProvider);
+        ref.invalidate(adminSupportCasesProvider);
+        onSuccess?.call();
+      } else {
+        final errorMsg = response.message ?? response.detail ?? 'Failed to attach user to support case';
         state = AsyncError(errorMsg, StackTrace.current);
         onError?.call(errorMsg);
       }

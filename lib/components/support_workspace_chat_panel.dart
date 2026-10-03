@@ -1,18 +1,23 @@
 import 'package:jaspr/dom.dart' hide ColorScheme;
 import 'package:jaspr/jaspr.dart';
 import 'package:jaspr_riverpod/jaspr_riverpod.dart';
+import 'package:taska_admin/core/designs/components/gap.dart';
 import 'package:universal_web/web.dart' as web;
 
 import '../core/designs/app_icons.dart';
 import '../core/designs/colors.dart';
 import '../core/designs/components/app_icon.dart';
 import '../core/models/clients/support/admin_add_support_internal_note_body.dart';
+import '../core/models/clients/support/admin_attach_user_to_case_body.dart';
 import '../core/models/clients/support/admin_send_support_message_body.dart';
 import '../core/models/clients/support/admin_support_attachment_item.dart';
+import '../core/models/clients/support/admin_support_case_detail.dart';
 import '../core/models/clients/support/admin_support_message_item.dart';
 import '../core/models/clients/support/admin_support_timeline_item.dart';
 import '../core/providers/admin_support_providers.dart';
+import '../core/providers/admin_user_providers.dart';
 import '../core/providers/ui_state_provider.dart';
+import 'search_users_dialog.dart';
 import 'support_workspace_assigned_cases_panel.dart';
 
 class SupportWorkspaceChatPanel extends StatefulComponent {
@@ -29,8 +34,46 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
   final String channel = 'IN_APP'; // Constant at IN_APP
   String visibility = 'PUBLIC'; // 'PUBLIC', 'INTERNAL', 'CUSTOMER_ONLY', 'PROVIDER_ONLY'
   bool isSending = false;
+  bool _isAttachingUser = false;
   bool isTimelineExpanded = false;
   bool isAttachmentsExpanded = false;
+
+  Future<void> _handleAttachUser(BuildContext context) async {
+    if (component.caseId == null || _isAttachingUser) return;
+
+    final selectedUser = await SearchUsersDialog.search(
+      context,
+      title: 'Attach User to Ticket',
+    );
+
+    if (selectedUser == null || selectedUser.id == null || !mounted) return;
+
+    setState(() => _isAttachingUser = true);
+
+    final notifier = context.read(adminSupportManagementProvider.notifier);
+    await notifier.attachUser(
+      component.caseId!,
+      AdminAttachUserToCaseBody(userId: selectedUser.id!),
+      onSuccess: () {
+        if (!mounted) return;
+        setState(() => _isAttachingUser = false);
+        context.showFlushbar(
+          title: 'User Attached',
+          message: 'Successfully attached ${selectedUser.fullname ?? selectedUser.email ?? 'user'} to ticket.',
+          type: FlushbarType.success,
+        );
+      },
+      onError: (msg) {
+        if (!mounted) return;
+        setState(() => _isAttachingUser = false);
+        context.showFlushbar(
+          title: 'Attach User Failed',
+          message: msg,
+          type: FlushbarType.error,
+        );
+      },
+    );
+  }
 
   void _onMessageInput(dynamic val) {
     setState(() {
@@ -136,6 +179,8 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
     final caseDetail = caseDetailAsync.value;
     final caseNo = caseDetail?.caseNumber ?? formatSupportId(component.caseId);
     final subject = caseDetail?.subject ?? 'No Subject';
+    final hasBothUsers = (caseDetail?.customerId != null && caseDetail!.customerId!.isNotEmpty || caseDetail?.customer != null) &&
+        (caseDetail?.providerId != null && caseDetail!.providerId!.isNotEmpty || caseDetail?.provider != null);
 
     return div(
       classes: 'flex flex-col h-full overflow-hidden transition-colors',
@@ -167,16 +212,35 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
                   [Component.text(subject)],
                 ),
               ]),
-              if (caseDetail?.initiator != null)
-                p(
-                  classes: 'text-[11px] font-medium truncate',
-                  styles: Styles(color: Color(colorScheme.textMuted)),
-                  [Component.text('${caseDetail?.initiator?.firstName ?? ''} ${caseDetail?.initiator?.lastName ?? ''} · ${caseDetail?.initiator?.email ?? ''}')],
+                _ChatPanelHeaderSubtext(
+                  caseDetail: caseDetail,
+                  colorScheme: colorScheme,
                 ),
             ]),
 
             // Quick action buttons on the sub-header
             div(classes: 'flex items-center space-x-1.5 shrink-0 pl-2', [
+              if (!hasBothUsers)
+                button(
+                  type: ButtonType.button,
+                  onClick: () => _handleAttachUser(context),
+                  disabled: _isAttachingUser,
+                  classes:
+                      'px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer border flex items-center space-x-1 shadow-2xs ${_isAttachingUser ? 'opacity-60 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}',
+                  styles: Styles(
+                    backgroundColor: Color(colorScheme.inputBg),
+                    color: Color(colorScheme.primary),
+                    raw: {'border-color': colorScheme.borderInput},
+                  ),
+                  attributes: {'title': 'Attach customer or provider user to ticket'},
+                  [
+                    if (_isAttachingUser)
+                      span(classes: 'animate-spin border-2 border-emerald-500 border-t-transparent rounded-full w-3 h-3 mr-1', [])
+                    else
+                      Space(),
+                    span(classes: 'hidden sm:inline', [Component.text(_isAttachingUser ? 'Attaching...' : 'Attach User')]),
+                  ],
+                ),
               if (caseDetail?.status != null)
                 span(
                   classes: 'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border',
@@ -230,11 +294,13 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
                 return div(classes: 'space-y-5', [
                   // Render initial ticket description bubble if available
                   if (caseDetail?.description != null && caseDetail!.description!.isNotEmpty)
-                    CustomerBubble(
+                    UserBubble(
                       body: caseDetail.description!,
-                      senderName: '${caseDetail.initiator?.firstName ?? ''} ${caseDetail.initiator?.lastName ?? ''}'.trim().isEmpty ? 'Customer' : '${caseDetail.initiator?.firstName ?? ''} ${caseDetail.initiator?.lastName ?? ''}',
+                      senderId: caseDetail.initiator?.id ?? caseDetail.customerId ?? caseDetail.providerId,
+                      defaultSenderName: '${caseDetail.initiator?.firstName ?? ''} ${caseDetail.initiator?.lastName ?? ''}'.trim(),
                       timestamp: caseDetail.createdAt,
                       channel: 'Initial Request',
+                      caseDetail: caseDetail,
                       colorScheme: colorScheme,
                     ),
 
@@ -293,11 +359,13 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
                     else if (msg.senderType == 'AGENT' || msg.senderType == 'ADMIN')
                       AgentBubble(msg: msg, colorScheme: colorScheme)
                     else
-                      CustomerBubble(
+                      UserBubble(
+                        msg: msg,
                         body: msg.body ?? '',
-                        senderName: 'Customer',
+                        senderId: msg.senderId,
                         timestamp: msg.createdAt,
                         channel: msg.channel ?? 'In App',
+                        caseDetail: caseDetail,
                         colorScheme: colorScheme,
                       ),
 
@@ -497,38 +565,109 @@ class _SupportWorkspaceChatPanelState extends State<SupportWorkspaceChatPanel> {
 // Customer Message Bubble
 // ─────────────────────────────────────────────────────────────
 
-class CustomerBubble extends StatelessComponent {
+// ─────────────────────────────────────────────────────────────
+// User Message Bubble (Customer / Provider)
+// ─────────────────────────────────────────────────────────────
+
+class UserBubble extends StatelessComponent {
+  final AdminSupportMessageItem? msg;
   final String body;
-  final String senderName;
+  final String? senderId;
+  final String? defaultSenderName;
   final String? timestamp;
   final String channel;
+  final AdminSupportCaseDetail? caseDetail;
   final ColorScheme colorScheme;
 
-  const CustomerBubble({
-    super.key,
+  const UserBubble({
+    this.msg,
     required this.body,
-    required this.senderName,
+    this.senderId,
+    this.defaultSenderName,
     required this.timestamp,
     required this.channel,
+    this.caseDetail,
     required this.colorScheme,
   });
 
   @override
   Component build(BuildContext context) {
+    final targetUserId = msg?.senderId ?? senderId ?? caseDetail?.initiator?.id;
+
+    final userDetailAsync = targetUserId != null && targetUserId.isNotEmpty
+        ? context.watch(adminUserDetailProvider(targetUserId))
+        : null;
+    final userDetail = userDetailAsync?.value;
+
+    final typeUpper = userDetail?.type?.toUpperCase();
+    final isProvider = typeUpper == 'PROVIDER' ||
+        userDetail?.providerProfile != null ||
+        (msg?.senderType?.toUpperCase() == 'PROVIDER') ||
+        (targetUserId != null && targetUserId == caseDetail?.providerId);
+
+    // Get display name
+    String displayName = '';
+    if (userDetail != null) {
+      if (isProvider && userDetail.providerProfile != null) {
+        displayName = '${userDetail.providerProfile?.firstName ?? ''} ${userDetail.providerProfile?.lastName ?? ''}'.trim();
+      } else if (userDetail.customerProfile != null) {
+        displayName = '${userDetail.customerProfile?.firstName ?? ''} ${userDetail.customerProfile?.lastName ?? ''}'.trim();
+      } else if (userDetail.providerProfile != null) {
+        displayName = '${userDetail.providerProfile?.firstName ?? ''} ${userDetail.providerProfile?.lastName ?? ''}'.trim();
+      }
+    }
+
+    if (displayName.isEmpty && targetUserId != null) {
+      if (targetUserId == caseDetail?.initiator?.id && caseDetail?.initiator != null) {
+        displayName = '${caseDetail!.initiator?.firstName ?? ''} ${caseDetail!.initiator?.lastName ?? ''}'.trim();
+      }
+    }
+
+    if (displayName.isEmpty && defaultSenderName != null && defaultSenderName!.trim().isNotEmpty) {
+      displayName = defaultSenderName!.trim();
+    }
+
+    if (displayName.isEmpty) {
+      displayName = isProvider ? 'Provider' : 'Customer';
+    }
+
+    final roleText = isProvider ? 'PROVIDER' : 'CUSTOMER';
+
+    // Role badge styling
+    final badgeBgColor = isProvider
+        ? (colorScheme.isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.10)')
+        : (colorScheme.isDark ? 'rgba(0, 168, 112, 0.15)' : 'rgba(0, 168, 112, 0.10)');
+    final badgeTextColor = isProvider ? '#3B82F6' : colorScheme.primary;
+    final badgeBorderColor = isProvider
+        ? (colorScheme.isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)')
+        : (colorScheme.isDark ? 'rgba(0, 168, 112, 0.3)' : 'rgba(0, 168, 112, 0.2)');
+
+    // Avatar background
+    final avatarBg = isProvider ? '#3B82F6' : _avatarColor(displayName);
+
     return div(classes: 'flex items-start space-x-2.5 max-w-xl', [
       // Avatar
       div(
-        classes: 'w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-2xs',
-        styles: Styles(backgroundColor: Color(_avatarColor(senderName))),
-        [Component.text(senderName.isNotEmpty ? senderName[0].toUpperCase() : 'C')],
+        classes: 'w-8 h-8 rounded-full flex items-center justify-center font-extrabold text-white text-xs shrink-0 shadow-2xs',
+        styles: Styles(backgroundColor: Color(avatarBg)),
+        [Component.text(displayName.isNotEmpty ? displayName[0].toUpperCase() : (isProvider ? 'P' : 'C'))],
       ),
-      div(classes: 'space-y-1.5', [
-        // Name & metadata row
+      div(classes: 'space-y-1.5 min-w-0', [
+        // Name & Role badge row
         div(classes: 'flex items-center space-x-2 text-[10.5px]', [
           span(
-            classes: 'font-bold',
+            classes: 'font-bold truncate',
             styles: Styles(color: Color(colorScheme.textHeading)),
-            [Component.text(senderName)],
+            [Component.text(displayName)],
+          ),
+          span(
+            classes: 'px-1.5 py-0.2 rounded-md text-[9px] font-extrabold uppercase tracking-wider border shrink-0',
+            styles: Styles(
+              backgroundColor: Color(badgeBgColor),
+              color: Color(badgeTextColor),
+              raw: {'border-color': badgeBorderColor},
+            ),
+            [Component.text(roleText)],
           ),
         ]),
         // Bubble body
@@ -563,6 +702,16 @@ class CustomerBubble extends StatelessComponent {
     if (name.isEmpty) return colors[0];
     return colors[name.codeUnitAt(0) % colors.length];
   }
+}
+
+class CustomerBubble extends UserBubble {
+  const CustomerBubble({
+    required String textBody,
+    required String senderName,
+    required super.timestamp,
+    required super.channel,
+    required super.colorScheme,
+  }) : super(body: textBody, defaultSenderName: senderName);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -788,5 +937,87 @@ class AttachmentCard extends StatelessComponent {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Sub-header text displaying Customer & Provider details
+// ─────────────────────────────────────────────────────────────
+
+class _ChatPanelHeaderSubtext extends StatelessComponent {
+  final AdminSupportCaseDetail? caseDetail;
+  final ColorScheme colorScheme;
+
+  const _ChatPanelHeaderSubtext({
+    required this.caseDetail,
+    required this.colorScheme,
+  });
+
+  @override
+  Component build(BuildContext context) {
+    if (caseDetail == null) return const Component.fragment([]);
+
+    final customerId = caseDetail!.customerId;
+    final providerId = caseDetail!.providerId;
+    final initiatorId = caseDetail!.initiator?.id;
+
+    final userIds = <String>[];
+    if (initiatorId != null && initiatorId.isNotEmpty) userIds.add(initiatorId);
+    if (customerId != null && customerId.isNotEmpty && !userIds.contains(customerId)) userIds.add(customerId);
+    if (providerId != null && providerId.isNotEmpty && !userIds.contains(providerId)) userIds.add(providerId);
+
+    final parts = <String>[];
+
+    for (final id in userIds) {
+      final userDetail = context.watch(adminUserDetailProvider(id)).value;
+
+      final typeUpper = userDetail?.type?.toUpperCase();
+      final isProvider = typeUpper == 'PROVIDER' ||
+          userDetail?.providerProfile != null ||
+          (id == providerId);
+
+      final roleLabel = isProvider ? 'Provider' : 'Customer';
+
+      String name = '';
+      if (userDetail != null) {
+        if (isProvider && userDetail.providerProfile != null) {
+          name = '${userDetail.providerProfile?.firstName ?? ''} ${userDetail.providerProfile?.lastName ?? ''}'.trim();
+        } else if (userDetail.customerProfile != null) {
+          name = '${userDetail.customerProfile?.firstName ?? ''} ${userDetail.customerProfile?.lastName ?? ''}'.trim();
+        } else if (userDetail.providerProfile != null) {
+          name = '${userDetail.providerProfile?.firstName ?? ''} ${userDetail.providerProfile?.lastName ?? ''}'.trim();
+        }
+      }
+
+      if (name.isEmpty && id == initiatorId && caseDetail!.initiator != null) {
+        name = '${caseDetail!.initiator?.firstName ?? ''} ${caseDetail!.initiator?.lastName ?? ''}'.trim();
+      }
+
+      if (name.isEmpty && id == customerId && caseDetail!.customer != null) {
+        name = caseDetail!.customer?['name']?.toString() ?? '';
+      }
+
+      if (name.isEmpty && id == providerId && caseDetail!.provider != null) {
+        name = caseDetail!.provider?['name']?.toString() ?? '';
+      }
+
+      if (name.isNotEmpty) {
+        parts.add('$roleLabel: $name');
+      }
+    }
+
+    if (parts.isEmpty && caseDetail!.initiator != null) {
+      final name = '${caseDetail!.initiator?.firstName ?? ''} ${caseDetail!.initiator?.lastName ?? ''}'.trim();
+      if (name.isNotEmpty) parts.add(name);
+      if (caseDetail!.initiator?.email != null) parts.add(caseDetail!.initiator!.email!);
+    }
+
+    if (parts.isEmpty) return const Component.fragment([]);
+
+    return p(
+      classes: 'text-[11px] font-medium truncate',
+      styles: Styles(color: Color(colorScheme.textMuted)),
+      [Component.text(parts.join('  ·  '))],
+    );
   }
 }

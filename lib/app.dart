@@ -28,6 +28,206 @@ import 'pages/system_logs_table.dart';
 import 'pages/tasks.dart';
 import 'pages/users.dart';
 
+final appRouter = Router(
+  redirect: (context, state) {
+    final token = localStorage.getItem('accessToken');
+    final isAuthenticated = token != null && token.isNotEmpty;
+    final isLoggingIn = state.location == '/login';
+
+    if (!isAuthenticated && !isLoggingIn) {
+      return '/login';
+    }
+    if (isAuthenticated && isLoggingIn) {
+      return '/';
+    }
+    return null;
+  },
+  routes: [
+    Route(
+      path: '/login',
+      title: 'Taska Admin - Authentication',
+      builder: (context, state) => const LoginPage(),
+    ),
+    Route(
+      path: '/support/workspace',
+      title: 'Taska Admin - Support Workspace',
+      builder: (context, state) => const SupportTicketWorkspaceManagerPage(),
+    ),
+    Route(
+      path: '/support-workspace',
+      title: 'Taska Admin - Support Workspace',
+      builder: (context, state) => const SupportTicketWorkspaceManagerPage(),
+    ),
+    ShellRoute(
+      builder: (context, state, child) {
+        final activePath = state.location;
+        final colorScheme = context.colorScheme;
+        final title = switch (activePath) {
+          '/about' => 'About Taska',
+          '/users' || '/customers' => 'Users Management',
+          '/kyc' => 'KYC Verification',
+          '/guarantors' => 'Guarantors Management',
+          '/interviews' => 'Provider Interviews',
+          '/tasks' => 'Tasks Management',
+          '/dispatch-sessions' => 'Dispatch Sessions & Attempts',
+          '/services' || '/service-management' => 'Service Management',
+          '/disputes' => 'Disputes & Claims',
+          '/support' || '/help' => 'Support & Help Desk',
+          '/payments' || '/transactions' => 'Payments & Finance',
+          '/administrators' => 'Administrators & Roles',
+          '/audit-logs' => 'Audit Logs',
+          '/system-logs' || '/system/logs' => 'System Dashboard & Metrics',
+          '/system-logs/table' || '/system/logs/table' => 'System Log Stream Explorer',
+          '/settings' => 'System Settings',
+          _ => 'Dashboard',
+        };
+
+        return div(
+          classes: 'w-full min-h-screen flex flex-col md:flex-row transition-colors duration-200',
+          styles: Styles(backgroundColor: Color(colorScheme.background)),
+          [
+            Sidebar(activePath: activePath),
+            section(
+              classes:
+                  'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden transition-colors duration-200',
+              styles: Styles(backgroundColor: Color(colorScheme.background)),
+              [
+                TopBar(title: title),
+                child,
+              ],
+            ),
+          ],
+        );
+      },
+      // ShellRoute children
+      routes: [
+        Route(
+          path: '/',
+          title: 'Taska Admin - Dashboard',
+          name: 'dashboard',
+          builder: (context, state) => const Home(),
+        ),
+        Route(
+          path: '/users',
+          title: 'Taska Admin - Users',
+          name: 'users',
+          builder: (context, state) => const UsersPage(),
+        ),
+        Route(
+          path: '/customers',
+          title: 'Taska Admin - Users',
+          name: 'customers',
+          builder: (context, state) => const UsersPage(),
+        ),
+        Route(
+          path: '/kyc',
+          title: 'Taska Admin - KYC Verification',
+          builder: (context, state) => const KycPage(),
+        ),
+        Route(
+          path: '/guarantors',
+          title: 'Taska Admin - Guarantors',
+          name: 'guarantors',
+          builder: (context, state) => const GuarantorsPage(),
+        ),
+        Route(
+          path: '/interviews',
+          title: 'Taska Admin - Interviews',
+          name: 'interviews',
+          builder: (context, state) => const InterviewsPage(),
+        ),
+        Route(
+          path: '/tasks',
+          title: 'Taska Admin - Tasks',
+          name: 'tasks',
+          builder: (context, state) => const TasksPage(),
+        ),
+        Route(
+          path: '/dispatch-sessions',
+          title: 'Taska Admin - Dispatch Sessions',
+          name: 'dispatchSessions',
+          builder: (context, state) {
+            final taskId = state.queryParams['task_id'] ?? state.queryParams['taskId'];
+            debugLog('Got here');
+            return DispatchSessionsPage(taskId: taskId);
+          },
+        ),
+        Route(
+          path: '/services',
+          title: 'Taska Admin - Services',
+          builder: (context, state) => const ServiceManagementPage(),
+        ),
+        Route(
+          path: '/service-management',
+          title: 'Taska Admin - Services',
+          builder: (context, state) => const ServiceManagementPage(),
+        ),
+        Route(
+          path: '/disputes',
+          title: 'Taska Admin - Disputes',
+          builder: (context, state) => const _PlaceholderPage(
+            title: 'Disputes & Resolution',
+            description: 'Track open customer disputes, arbitration tickets, and resolution history.',
+          ),
+        ),
+        Route(
+          path: '/support',
+          title: 'Taska Admin - Support',
+          builder: (context, state) => const SupportPage(),
+        ),
+        Route(
+          path: '/payments',
+          title: 'Taska Admin - Payments',
+          builder: (context, state) => const PaymentsPage(),
+        ),
+        Route(
+          path: '/administrators',
+          title: 'Taska Admin - Administrators',
+          builder: (context, state) => const AdministratorsPage(),
+        ),
+        Route(
+          path: '/audit-logs',
+          title: 'Taska Admin - Audit Logs',
+          builder: (context, state) => const AuditLogsPage(),
+        ),
+        Route(
+          path: '/system-logs',
+          title: 'Taska Admin - System Dashboard',
+          builder: (context, state) => const SystemLogsPage(),
+        ),
+        Route(
+          path: '/system/logs',
+          title: 'Taska Admin - System Dashboard',
+          builder: (context, state) => const SystemLogsPage(),
+        ),
+        Route(
+          path: '/system-logs/table',
+          title: 'Taska Admin - System Log Stream',
+          builder: (context, state) => const SystemLogsTablePage(),
+        ),
+        Route(
+          path: '/system/logs/table',
+          title: 'Taska Admin - System Log Stream',
+          builder: (context, state) => const SystemLogsTablePage(),
+        ),
+        Route(
+          path: '/settings',
+          title: 'Taska Admin - Settings',
+          builder: (context, state) => const _PlaceholderPage(
+            title: 'System Settings',
+            description: 'Configure application parameters, notification services, integrations, and branding.',
+          ),
+        ),
+        Route(
+          path: '/about',
+          title: 'About Taska',
+          builder: (context, state) => const About(),
+        ),
+      ],
+    ),
+  ],
+);
+
 @client
 class App extends StatelessComponent {
   const App({super.key});
@@ -44,228 +244,19 @@ class App extends StatelessComponent {
       appClasses += ' dark';
     }
 
-    return div(classes: appClasses, styles: Styles(backgroundColor: Color(colorScheme.background)), [
-      Router(
-        redirect: (context, state) {
-          final token = localStorage.getItem('accessToken');
-          final isAuthenticated = token != null && token.isNotEmpty;
-          final isLoggingIn = state.location == '/login';
-
-          if (!isAuthenticated && !isLoggingIn) {
-            return '/login';
-          }
-          if (isAuthenticated && isLoggingIn) {
-            return '/';
-          }
-          return null;
-        },
-        routes: [
-          Route(
-            path: '/login',
-            title: 'Taska Admin - Authentication',
-            builder: (context, state) => const LoginPage(),
-          ),
-          Route(
-            path: '/support/workspace',
-            title: 'Taska Admin - Support Workspace',
-            builder: (context, state) => const SupportTicketWorkspaceManagerPage(),
-          ),
-          Route(
-            path: '/support-workspace',
-            title: 'Taska Admin - Support Workspace',
-            builder: (context, state) => const SupportTicketWorkspaceManagerPage(),
-          ),
-          ShellRoute(
-            builder: (context, state, child) {
-              var activePath = state.location;
-              var title = 'Dashboard';
-              if (activePath == '/about') {
-                title = 'About Taska';
-              } else if (activePath == '/users' || activePath == '/customers') {
-                title = 'Users Management';
-              } else if (activePath == '/kyc') {
-                title = 'KYC Verification';
-              } else if (activePath == '/guarantors') {
-                title = 'Guarantors Management';
-              } else if (activePath == '/interviews') {
-                title = 'Provider Interviews';
-              } else if (activePath == '/tasks') {
-                title = 'Tasks Management';
-              } else if (activePath == '/dispatch-sessions') {
-                title = 'Dispatch Sessions & Attempts';
-              } else if (activePath == '/services' || activePath == '/service-management') {
-                title = 'Service Management';
-              } else if (activePath == '/disputes') {
-                title = 'Disputes & Claims';
-              } else if (activePath == '/support' || activePath == '/help') {
-                title = 'Support & Help Desk';
-              } else if (activePath == '/payments' || activePath == '/transactions') {
-                title = 'Payments & Finance';
-              } else if (activePath == '/administrators') {
-                title = 'Administrators & Roles';
-              } else if (activePath == '/audit-logs') {
-                title = 'Audit Logs';
-              } else if (activePath == '/system-logs' || activePath == '/system/logs') {
-                title = 'System Dashboard & Metrics';
-              } else if (activePath == '/system-logs/table' || activePath == '/system/logs/table') {
-                title = 'System Log Stream Explorer';
-              } else if (activePath == '/settings') {
-                title = 'System Settings';
-              }
-
-              final uiState = context.watch(uiStateProvider);
-
-              return div(
-                classes: 'w-full min-h-screen flex flex-col md:flex-row transition-colors duration-200',
-                styles: Styles(backgroundColor: Color(colorScheme.background)),
-                [
-                  Sidebar(activePath: activePath),
-                  section(
-                    classes:
-                        'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden transition-colors duration-200',
-                    styles: Styles(backgroundColor: Color(colorScheme.background)),
-                    [
-                      TopBar(title: title),
-                      child,
-                    ],
-                  ),
-                  if (uiState.isSidePanelOpen && uiState.sidePanel != null)
-                    buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
-                  if (uiState.isDialogOpen && uiState.dialog != null)
-                    buildDialogOverlay(context, uiState.dialog!, uiState.dialogTitle),
-                  if (uiState.flushbar != null) buildFlushbar(context, uiState.flushbar!),
-                ],
-              );
-            },
-            // ShellRoute children
-            routes: [
-              Route(
-                path: '/',
-                title: 'Taska Admin - Dashboard',
-                name: 'dashboard',
-                builder: (context, state) => const Home(),
-              ),
-              Route(
-                path: '/users',
-                title: 'Taska Admin - Users',
-                name: 'users',
-                builder: (context, state) => const UsersPage(),
-              ),
-              Route(
-                path: '/customers',
-                title: 'Taska Admin - Users',
-                name: 'customers',
-                builder: (context, state) => const UsersPage(),
-              ),
-              Route(
-                path: '/kyc',
-                title: 'Taska Admin - KYC Verification',
-                builder: (context, state) => const KycPage(),
-              ),
-              Route(
-                path: '/guarantors',
-                title: 'Taska Admin - Guarantors',
-                name: 'guarantors',
-                builder: (context, state) => const GuarantorsPage(),
-              ),
-              Route(
-                path: '/interviews',
-                title: 'Taska Admin - Interviews',
-                name: 'interviews',
-                builder: (context, state) => const InterviewsPage(),
-              ),
-              Route(
-                path: '/tasks',
-                title: 'Taska Admin - Tasks',
-                name: 'tasks',
-                builder: (context, state) => const TasksPage(),
-              ),
-              Route(
-                path: '/dispatch-sessions',
-                title: 'Taska Admin - Dispatch Sessions',
-                name: 'dispatchSessions',
-                builder: (context, state) {
-                  final taskId = state.queryParams['task_id'] ?? state.queryParams['taskId'];
-                  debugLog('Got here');
-                  return DispatchSessionsPage(taskId: taskId);
-                },
-              ),
-              Route(
-                path: '/services',
-                title: 'Taska Admin - Services',
-                builder: (context, state) => const ServiceManagementPage(),
-              ),
-              Route(
-                path: '/service-management',
-                title: 'Taska Admin - Services',
-                builder: (context, state) => const ServiceManagementPage(),
-              ),
-              Route(
-                path: '/disputes',
-                title: 'Taska Admin - Disputes',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'Disputes & Resolution',
-                  description: 'Track open customer disputes, arbitration tickets, and resolution history.',
-                ),
-              ),
-              Route(
-                path: '/support',
-                title: 'Taska Admin - Support',
-                builder: (context, state) => const SupportPage(),
-              ),
-              Route(
-                path: '/payments',
-                title: 'Taska Admin - Payments',
-                builder: (context, state) => const PaymentsPage(),
-              ),
-              Route(
-                path: '/administrators',
-                title: 'Taska Admin - Administrators',
-                builder: (context, state) => const AdministratorsPage(),
-              ),
-              Route(
-                path: '/audit-logs',
-                title: 'Taska Admin - Audit Logs',
-                builder: (context, state) => const AuditLogsPage(),
-              ),
-              Route(
-                path: '/system-logs',
-                title: 'Taska Admin - System Dashboard',
-                builder: (context, state) => const SystemLogsPage(),
-              ),
-              Route(
-                path: '/system/logs',
-                title: 'Taska Admin - System Dashboard',
-                builder: (context, state) => const SystemLogsPage(),
-              ),
-              Route(
-                path: '/system-logs/table',
-                title: 'Taska Admin - System Log Stream',
-                builder: (context, state) => const SystemLogsTablePage(),
-              ),
-              Route(
-                path: '/system/logs/table',
-                title: 'Taska Admin - System Log Stream',
-                builder: (context, state) => const SystemLogsTablePage(),
-              ),
-              Route(
-                path: '/settings',
-                title: 'Taska Admin - Settings',
-                builder: (context, state) => const _PlaceholderPage(
-                  title: 'System Settings',
-                  description: 'Configure application parameters, notification services, integrations, and branding.',
-                ),
-              ),
-              Route(
-                path: '/about',
-                title: 'About Taska',
-                builder: (context, state) => const About(),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ]);
+    return div(
+      classes: appClasses,
+      styles: Styles(backgroundColor: Color(colorScheme.background)),
+      [
+        appRouter,
+        if (uiState.isSidePanelOpen && uiState.sidePanel != null)
+          buildSidePanelOverlay(context, uiState.sidePanel!, uiState.sidePanelTitle),
+        if (uiState.isDialogOpen && uiState.dialog != null)
+          buildDialogOverlay(context, uiState.dialog!, uiState.dialogTitle),
+        if (uiState.flushbar != null)
+          buildFlushbar(context, uiState.flushbar!),
+      ],
+    );
   }
 
   Component buildDialogOverlay(BuildContext context, Component content, String? title) {

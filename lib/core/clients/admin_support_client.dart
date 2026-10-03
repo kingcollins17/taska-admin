@@ -6,6 +6,7 @@ import 'package:taska_admin/core/providers/network_providers.dart';
 import '../models/clients/base_response.dart';
 import '../models/clients/support/admin_add_support_internal_note_body.dart';
 import '../models/clients/support/admin_assign_support_case_body.dart';
+import '../models/clients/support/admin_attach_user_to_case_body.dart';
 import '../models/clients/support/admin_resolve_support_case_body.dart';
 import '../models/clients/support/admin_send_support_message_body.dart';
 import '../models/clients/support/admin_support_attachment_item.dart';
@@ -121,5 +122,11 @@ abstract class AdminSupportClient {
   @POST('/admin/support/cases/{case_id}/escalate')
   Future<BaseApiResponse<dynamic>> escalateCase(
     @Path('case_id') String caseId,
+  );
+
+  @POST('/admin/support/cases/{case_id}/attach-user')
+  Future<BaseApiResponse<dynamic>> attachUser(
+    @Path('case_id') String caseId,
+    @Body() AdminAttachUserToCaseBody body,
   );
 }

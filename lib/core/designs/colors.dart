@@ -66,7 +66,7 @@ class ColorScheme {
     this.primaryDark = '#004D33',
     this.primaryDarkest = '#001A12',
     this.mint = '#00F5A0',
-    this.background = '#121816',
+    this.background = '#090D0B',
     this.surface = '#121816',
     this.inputBg = '#19221E',
     this.textHeading = '#FFFFFF',
